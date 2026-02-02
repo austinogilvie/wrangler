@@ -3,7 +3,6 @@
   "version": "2.0.0",
   "description": "GitHub-centric implementation workflow with evolving PR descriptions",
   "private": true,
-  "type": "module",
   "scripts": {
     "build": "tsc",
     "test": "jest",
