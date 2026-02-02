@@ -119,6 +119,21 @@ export class GitHubClient {
   }
 
   /**
+   * Get PR description only
+   */
+  async getPRDescription(prNumber: number): Promise<string> {
+    const pr = await this.getPR(prNumber);
+    return pr.body || '';
+  }
+
+  /**
+   * Update PR description only
+   */
+  async updatePRDescription(prNumber: number, body: string): Promise<void> {
+    await this.updatePR(prNumber, { body });
+  }
+
+  /**
    * Escape argument for shell command
    * Wraps in double quotes and escapes internal quotes
    */
