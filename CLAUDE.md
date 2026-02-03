@@ -813,6 +813,27 @@ skills/{category}/{skill-name}/
 
 **Creating new skills**: Follow the `skills/meta/writing-skills/SKILL.md` guide
 
+### Token Efficiency Guidelines
+
+**Principle**: "The context window is a public good"
+
+**Skill File Size Limits**:
+- SKILL.md body: <500 lines (target: 300-400 lines)
+- Getting-started workflows: <150 words
+- Frequently-used skills: <200 words total
+- Complex skills: <500 words main content, rest in `references/`
+
+**Progressive Disclosure**:
+- Skills >500 lines MUST use progressive disclosure
+- Heavy content moves to `references/` subdirectory
+- SKILL.md explicitly references supporting files
+
+**Verbosity Reduction**:
+- Only add context Claude doesn't have
+- Challenge each paragraph: "Does this justify its token cost?"
+- Assume Claude knows common concepts
+- Focus on unique skill-specific guidance
+
 ---
 
 ## Code Standards
