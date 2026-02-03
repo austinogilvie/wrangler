@@ -5,23 +5,6 @@ description: Use when design is complete and you need detailed implementation ta
 
 # Writing Plans
 
-## Skill Usage Announcement
-
-**MANDATORY**: When using this skill, announce it at the start with:
-
-```
-🔧 Using Skill: writing-plans | [brief purpose based on context]
-```
-
-**Example:**
-```
-🔧 Using Skill: writing-plans | [Provide context-specific example of what you're doing]
-```
-
-This creates an audit trail showing which skills were applied during the session.
-
-
-
 ## Overview
 
 Write comprehensive implementation plans assuming the engineer has zero context for our codebase. Document everything they need to know: which files to touch for each task, code, testing, docs they might need to check, how to test it. Give them the whole plan as bite-sized tasks. DRY. YAGNI. TDD. Frequent commits.
@@ -78,7 +61,7 @@ Skip plan file when:
 ```markdown
 # [Feature Name] Implementation Plan
 
-> **For Claude:** REQUIRED SUB-SKILL: Use /wrangler:implement to implement this plan task-by-task.
+> **For Claude:** REQUIRED SUB-SKILL: Use /wrangler:implementing-issues to implementing-issues this plan task-by-task.
 
 **Goal:** [One sentence describing what this builds]
 
@@ -97,7 +80,7 @@ Skip plan file when:
 - Exact file paths (create/modify/test)
 - Complete code examples (not "add validation")
 - Exact commands with expected output
-- All 5 TDD steps (write test, verify fails, implement, verify passes, commit)
+- All 5 TDD steps (write test, verify fails, implementing-issues, verify passes, commit)
 - Clear acceptance criteria
 - Dependencies on other tasks
 
@@ -164,7 +147,7 @@ Reference: [specification filename]
 - Modify: \`path/to/existing.ts:45-67\`
 - Test: \`path/to/test.ts\`
 
-## Implementation Steps
+## Implementation
 
 **Step 1: Write the failing test**
 
@@ -251,14 +234,14 @@ After creating issues, offer execution choice:
 
 **Execution options:**
 
-**Ready to implement?**
+**Ready to implementing-issues?**
 
-Use `/wrangler:implement` with one of these scopes:
-- `/wrangler:implement` (auto-infers from plan file in context)
-- `/wrangler:implement issues 1-N` (specific issue range)
-- `/wrangler:implement plan-filename.md` (explicit plan file)
+Use `/wrangler:implementing-issues` with one of these scopes:
+- `/wrangler:implementing-issues` (auto-infers from plan file in context)
+- `/wrangler:implementing-issues issues 1-N` (specific issue range)
+- `/wrangler:implementing-issues plan-filename.md` (explicit plan file)
 
-The implement skill will:
+The implementing-issues skill will:
 - Execute all tasks autonomously via subagents
 - Run code review after each task with automatic fixes
 - Only stop for genuine blockers (unclear requirements, flummoxed agents)

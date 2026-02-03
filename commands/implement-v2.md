@@ -1,4 +1,4 @@
-# /wrangler:implement-v2
+# /wrangler:implementing-issues-v2
 
 ## Description
 
@@ -7,12 +7,12 @@ Implements specifications using a modular, skill-orchestration workflow with man
 ## Usage
 
 ```
-/wrangler:implement-v2 <spec-id>
+/wrangler:implementing-issues-v2 <spec-id>
 ```
 
 **Example:**
 ```
-/wrangler:implement-v2 SPEC-000042
+/wrangler:implementing-issues-v2 SPEC-000042
 ```
 
 ## What It Does
@@ -160,7 +160,7 @@ This modular approach provides:
 
 ## See Also
 
-- [implement-spec-v2 Skill Documentation](../skills/implement-spec-v2/SKILL.md)
+- [implement-spec-v2 Skill Documentation](../skills/implementing-specs-v2/SKILL.md)
 - [writing-plans Skill Documentation](../skills/writing-plans/SKILL.md)
-- [implement Skill Documentation](../skills/implement/SKILL.md)
+- [implement Skill Documentation](../skills/implementing-issues/SKILL.md)
 - [MCP Issue Management](../docs/MCP-USAGE.md)
