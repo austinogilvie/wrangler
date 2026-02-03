@@ -15,7 +15,7 @@ You write test cases (pressure scenarios with subagents), watch them fail (basel
 
 **Core principle:** If you didn't watch an agent fail without the skill, you don't know if the skill teaches the right thing.
 
-**REQUIRED BACKGROUND:** You MUST understand wrangler:test-driven-development before using this skill. That skill defines the fundamental RED-GREEN-REFACTOR cycle. This skill adapts TDD to documentation.
+**REQUIRED BACKGROUND:** You MUST understand wrangler:practicing-tdd before using this skill. That skill defines the fundamental RED-GREEN-REFACTOR cycle. This skill adapts TDD to documentation.
 
 **Official guidance:** For Anthropic's official skill authoring resources, see references/anthropic-resources.md for links to live documentation maintained by Anthropic.
 
@@ -122,7 +122,7 @@ Target: getting-started <150 words, frequently-loaded <200 words, others <500 wo
 
 ### 5. Cross-Referencing
 
-Use skill name with explicit requirement markers: "REQUIRED: Use wrangler:test-driven-development". Don't use @ links (force-loads context).
+Use skill name with explicit requirement markers: "REQUIRED: Use wrangler:practicing-tdd". Don't use @ links (force-loads context).
 
 ## Flowchart Usage
 
@@ -189,7 +189,7 @@ Write skill before testing? Delete it. Start over.
 
 **No exceptions:** Not for "simple additions", "just adding a section", or "documentation updates". Don't keep untested changes as "reference". Delete means delete.
 
-**REQUIRED BACKGROUND:** wrangler:test-driven-development skill.
+**REQUIRED BACKGROUND:** wrangler:practicing-tdd skill.
 
 ## Testing All Skill Types
 
@@ -197,7 +197,7 @@ Different skill types need different test approaches:
 
 **Discipline Skills** (TDD, verification): Test with pressure scenarios combining time + sunk cost + exhaustion. Success = agent follows rule under maximum pressure.
 
-**Technique Skills** (condition-based-waiting, root-cause-tracing): Test with application scenarios and variations. Success = agent applies technique correctly to new scenario.
+**Technique Skills** (condition-based-waiting, tracing-root-causes): Test with application scenarios and variations. Success = agent applies technique correctly to new scenario.
 
 **Pattern Skills** (reducing-complexity): Test with recognition and counter-examples. Success = agent knows when/how to apply pattern.
 
@@ -352,7 +352,7 @@ Don't test: Pure reference skills, skills without rules to violate.
 
 ### Writing Pressure Scenarios
 
-**Bad:** "You need to implement a feature. What does the skill say?"
+**Bad:** "You need to implementing-features a feature. What does the skill say?"
 
 **Good:** "Production down. $10k/min lost. Manager says 2-line fix now. 5 min deploy window."
 

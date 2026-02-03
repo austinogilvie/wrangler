@@ -11,7 +11,7 @@ End-to-end orchestration that takes a specification file and produces a GitHub P
 
 **Core principle:** Single command produces PR with verified implementation, full observability, and recovery capability.
 
-**Entry point:** `/wrangler:implement [spec-file]`
+**Entry point:** `/wrangler:implementing-features [spec-file]`
 
 **Produces:**
 - GitHub Pull Request with comprehensive summary
@@ -21,15 +21,15 @@ End-to-end orchestration that takes a specification file and produces a GitHub P
 ## When to Use
 
 **Use this skill when:**
-- User says "implement this spec" and wants a PR
+- User says "implementing-features this spec" and wants a PR
 - You want full audit trail and observability
 - You need session recovery capability
 - You want isolated worktree for implementation
 
 **Do NOT use this skill when:**
-- Implementing a single issue (use `implement` skill directly)
+- Implementing a single issue (use `implementing-features` skill directly)
 - User wants manual control over each step
-- Working on existing PR or branch (use `implement` skill)
+- Working on existing PR or branch (use `implementing-features` skill)
 
 ## Workflow Phases
 
@@ -169,7 +169,7 @@ Create implementation plan with MCP issues.
      tasksCompleted: [],
      tasksPending: ISSUE_IDS,
      lastAction: "Created implementation plan with {TASK_COUNT} tasks",
-     resumeInstructions: "Continue with execute phase, implement issues: {ISSUE_IDS}"
+     resumeInstructions: "Continue with execute phase, implementing-features issues: {ISSUE_IDS}"
    )
    ```
 
@@ -189,12 +189,12 @@ Implement all tasks using subagents.
    session_phase(sessionId: SESSION_ID, phase: "execute", status: "started")
    ```
 
-2. **Invoke implement skill**
+2. **Invoke implementing-features skill**
 
-   Use the `implement` skill with worktree context:
+   Use the `implementing-features` skill with worktree context:
 
    ```markdown
-   I'm using the implement skill to execute all tasks.
+   I'm using the implementing-features skill to execute all tasks.
 
    ## Context for Implement Skill
 
@@ -369,7 +369,7 @@ Push branch and create PR.
 
    ```bash
    cd "{WORKTREE_ABSOLUTE}" && gh pr create \
-     --title "feat({SPEC_NAME}): implement specification" \
+     --title "feat({SPEC_NAME}): implementing-features specification" \
      --body "{PR_BODY}" \
      --base main \
      --head "{BRANCH_NAME}"
@@ -532,7 +532,7 @@ Each phase has verification gates:
 |-------|----------|
 | Worktree creation fails | Check disk space, permissions |
 | Planning unclear | Escalate to user for clarification |
-| Task blocked | Escalate via implement skill |
+| Task blocked | Escalate via implementing-features skill |
 | Tests fail | Do not publish, inform user |
 | Push fails | Check git remote, auth |
 | PR creation fails | Check gh auth, permissions |
@@ -549,9 +549,9 @@ Each phase has verification gates:
 ## Example Execution
 
 ```
-User: /wrangler:implement spec-auth-system.md
+User: /wrangler:implementing-features spec-auth-system.md
 
-Using Skill: implement-spec | Implementing spec-auth-system.md with full audit trail
+Using Skill: implementing-features-spec | Implementing spec-auth-system.md with full audit trail
 
 PHASE 1: INIT
 -> session_start(specFile: "spec-auth-system.md")
@@ -566,7 +566,7 @@ PHASE 2: PLAN
 -> session_checkpoint saved
 
 PHASE 3: EXECUTE
--> Invoking implement skill with worktree context
+-> Invoking implementing-features skill with worktree context
 -> Task ISS-000042: Complete (TDD certified, code reviewed)
 -> session_checkpoint saved
 -> Task ISS-000043: Complete
@@ -608,10 +608,10 @@ Audit trail: .wrangler/sessions/2025-12-07-abc123-f8d2/
 ## Integration with Other Skills
 
 **Required skills:**
-- `implement` - Task execution with TDD and code review
+- `implementing-features` - Task execution with TDD and code review
 - `writing-plans` - Breaking spec into MCP issues
-- `test-driven-development` - TDD compliance in subagents
-- `requesting-code-review` - Code review for each task
+- `practicing-tdd` - TDD compliance in subagents
+- `requesting-reviewing-code` - Code review for each task
 
 **Optional skills:**
 - `using-git-worktrees` - Manual worktree management (automated here)

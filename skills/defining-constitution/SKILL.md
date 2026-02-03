@@ -1,5 +1,5 @@
 ---
-name: defining-constitution
+name: defining-defining-constitution
 description: Develop, refine, and maintain project constitutional principles - uses Socratic questioning to eliminate ambiguity and ensure perfect clarity on design values and non-negotiables
 ---
 
@@ -7,7 +7,7 @@ description: Develop, refine, and maintain project constitutional principles - u
 
 ## Purpose
 
-The project constitution serves as "supreme law" - a clear, unambiguous statement of:
+The project defining-constitution serves as "supreme law" - a clear, unambiguous statement of:
 - Core design values and non-negotiables
 - Decision-making frameworks
 - Concrete examples of good and bad alignment
@@ -19,11 +19,11 @@ The project constitution serves as "supreme law" - a clear, unambiguous statemen
 
 ### 1. Constitution Creation
 
-When helping user create new constitution from scratch, use the `initialize-governance` skill instead (it includes constitution creation as part of full setup).
+When helping user create new defining-constitution from scratch, use the `initializing-governance` skill instead (it includes defining-constitution creation as part of full setup).
 
 ### 2. Constitution Refinement
 
-When user has existing constitution needing improvement:
+When user has existing defining-constitution needing improvement:
 
 **Read Current Constitution**:
 ```bash
@@ -66,7 +66,7 @@ cat .wrangler/CONSTITUTION.md
 **THIS IS YOUR PRIMARY VALUE-ADD**: Systematically eliminate all ambiguity through structured questioning.
 
 **Invocation**: User can invoke this directly with phrases like:
-- "Refine the clarity of our constitution"
+- "Refine the clarity of our defining-constitution"
 - "Help me make Principle 3 clearer"
 - "Remove ambiguity from our design principles"
 
@@ -76,24 +76,24 @@ cat .wrangler/CONSTITUTION.md
 
 When user proposes changes to existing principles:
 
-**Amendment Process** (from constitution template):
+**Amendment Process** (from defining-constitution template):
 1. **Proposal**: Create issue with `constitutional-amendment` label
 2. **Justification**: Document why amendment needed
 3. **Impact Analysis**: Identify all affected code/specs
 4. **Approval**: User decides
-5. **Implementation**: Update constitution, increment version
+5. **Implementation**: Update defining-constitution, increment version
 6. **Communication**: Update roadmap changelog
 7. **Migration**: Update code/docs to reflect new principle
 
 **Your Role**:
 - Help user articulate amendment clearly
 - Identify impact on existing specifications and code
-- Update constitution file with proper versioning
+- Update defining-constitution file with proper versioning
 - Create amendment proposal issue for tracking
 
 ## Clarity Refinement Workflow
 
-This is the core value of the constitution skill - systematic ambiguity removal.
+This is the core value of the defining-constitution skill - systematic ambiguity removal.
 
 ### Phase 1: Identify Ambiguities
 
@@ -258,7 +258,7 @@ If you see ANY of these in a principle, invoke clarity refinement:
 
 ### Clarity Heuristic
 
-**Test**: Can a new LLM, given ONLY the constitution (no conversation history), evaluate a feature request and reach the same conclusion as you and the user?
+**Test**: Can a new LLM, given ONLY the defining-constitution (no conversation history), evaluate a feature request and reach the same conclusion as you and the user?
 
 **If NO**: Constitution needs refinement.
 **If YES**: Constitution is concrete enough.
@@ -347,7 +347,7 @@ Once approved, update `.wrangler/CONSTITUTION.md`:
 ### Version History
 
 - **1.1.0** (2024-11-18): Modified Principle 2 (Simplicity) to add concrete example about microservices
-- **1.0.0** (2024-10-01): Initial constitution ratified
+- **1.0.0** (2024-10-01): Initial defining-constitution ratified
 ```
 
 ### 4. Update Roadmap Changelog
@@ -578,11 +578,11 @@ When principles conflict, apply in this order:
 
 **User**: "Approved"
 
-**You**: [Updates constitution, increments version, updates roadmap, closes issue]
+**You**: [Updates defining-constitution, increments version, updates roadmap, closes issue]
 
 ### Example 3: Ambiguity Detection
 
-**You** (reading constitution): "I see Principle 3 says 'Be pragmatic about quality.' This is ambiguous - what does pragmatic mean here?"
+**You** (reading defining-constitution): "I see Principle 3 says 'Be pragmatic about quality.' This is ambiguous - what does pragmatic mean here?"
 
 **User**: "Well, we can cut corners for MVPs"
 
@@ -602,9 +602,9 @@ When principles conflict, apply in this order:
 
 ### Principles Are Perfect But Project Violates Them
 
-**Situation**: Current codebase doesn't follow constitution
+**Situation**: Current codebase doesn't follow defining-constitution
 
-**Response**: Don't change constitution to match code. Instead:
+**Response**: Don't change defining-constitution to match code. Instead:
 1. Document violations in `.wrangler/ROADMAP__NEXT_STEPS.md` under Technical Debt
 2. Create issues to fix violations
 3. Mark with `constitutional-violation` label
@@ -635,13 +635,13 @@ Constitutional work is complete when:
 
 ## Related Skills
 
-- **initialize-governance** - For setting up full governance framework (includes constitution creation)
-- **check-constitutional-alignment** - For verifying features against constitution
-- **verify-governance** - For checking constitution file integrity
+- **initializing-governance** - For setting up full governance framework (includes defining-constitution creation)
+- **checking-constitutional-alignment** - For verifying features against defining-constitution
+- **verifying-governance** - For checking defining-constitution file integrity
 - **brainstorming** - For helping user develop initial principle ideas
 
 ## Remember
 
 **Your superpower is Socratic questioning to eliminate ambiguity.** Don't accept vague principles. Keep asking "How would we know?" and "Can you give me an example?" until the principle is concrete enough that any AI could apply it consistently.
 
-The goal: You and the user should be "of one mind" because the constitution is so clear that no interpretation is needed.
+The goal: You and the user should be "of one mind" because the defining-constitution is so clear that no interpretation is needed.

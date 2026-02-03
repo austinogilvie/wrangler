@@ -26,7 +26,7 @@ If you haven't run the verification command in this message, you cannot claim it
 ```
 BEFORE claiming any status or expressing satisfaction:
 
-0. TDD COMPLIANCE: Have you followed test-driven-development skill?
+0. TDD COMPLIANCE: Have you followed practicing-tdd skill?
    - See TDD Compliance Certification (below)
    - If NO: Stop. You violated TDD. Start over.
 
@@ -98,7 +98,7 @@ For each new function/method implemented:
 - **If ANY "NO" answers**: Work is NOT complete. Delete and restart with TDD.
 - **This certification MUST be included** in your completion message.
 - **One entry required** for each new function/method.
-- **"Watched fail" = NO is ONLY acceptable** if explicitly following receiving-code-review (fixing existing untested code).
+- **"Watched fail" = NO is ONLY acceptable** if explicitly following receiving-reviewing-code (fixing existing untested code).
 
 ### Why This Matters:
 
@@ -141,7 +141,7 @@ This means code review IS MANDATORY for:
 
 ALL of these MUST be true to claim work complete:
 
-- [ ] **Code review requested**: Used requesting-code-review skill
+- [ ] **Code review requested**: Used requesting-reviewing-code skill
 - [ ] **Review completed**: code-reviewer subagent dispatched and finished
 - [ ] **Critical issues**: 0 (MUST be zero, no exceptions)
 - [ ] **Important issues**: 0 (MUST be zero OR converted to tracked issue with ID)
@@ -178,7 +178,7 @@ Valid exceptions (code review NOT required):
 ```
 ## Code Review Gate
 
-- [x] **Code review requested**: Used requesting-code-review skill
+- [x] **Code review requested**: Used requesting-reviewing-code skill
 - [x] **Review completed**: code-reviewer subagent finished analysis
 - [x] **Critical issues**: 0
 - [x] **Important issues**: 0 (1 converted to issue #123)
@@ -200,7 +200,7 @@ You **CANNOT** claim completion without:
 2. Critical issues fixed (MUST be 0, no exceptions)
 3. Important issues MUST be 0 OR converted to tracked issue with ID (cannot be "acknowledged" or "deferred" without issue ID)
 
-**Attempting to skip code review without valid exception violates verification-before-completion.**
+**Attempting to skip code review without valid exception violates verifying-before-completion.**
 
 ### Common Rationalizations (DO NOT ACCEPT):
 
@@ -221,7 +221,7 @@ IF your work involves UI (HTML, CSS, JSX, templates, components):
 
 BEFORE claiming UI work complete, verify ALL of these:
 
-**For detailed guidance on frontend testing patterns, see the testing-anti-patterns skill:**
+**For detailed guidance on frontend testing patterns, see the avoiding-testing-anti-patterns skill:**
 - Anti-Pattern 6: Testing Implementation Details (test user-visible behavior, not internals)
 - Anti-Pattern 7: No Accessibility Testing (comprehensive a11y verification)
 - Anti-Pattern 8: Testing Happy Path Only (all states: loading, error, empty, partial)
@@ -252,7 +252,7 @@ BEFORE claiming UI work complete, verify ALL of these:
 
 **Evidence required**: Network tab screenshot or description of verified requests
 
-### Accessibility Verification (See testing-anti-patterns Anti-Pattern 7 for detailed guidance)
+### Accessibility Verification (See avoiding-testing-anti-patterns Anti-Pattern 7 for detailed guidance)
 - [ ] **Run axe-core test**: 0 violations
 - [ ] **Test keyboard navigation**: All interactive elements accessible via Tab/Enter/Escape
 - [ ] **Verify screen reader compatibility**: All elements have accessible names
@@ -260,9 +260,9 @@ BEFORE claiming UI work complete, verify ALL of these:
 
 **Evidence required**: axe-core output (0 violations) + Lighthouse score
 
-**For detailed examples and test code, see testing-anti-patterns skill Anti-Pattern 7.**
+**For detailed examples and test code, see avoiding-testing-anti-patterns skill Anti-Pattern 7.**
 
-### UI States Verification (See testing-anti-patterns Anti-Pattern 8 for detailed guidance)
+### UI States Verification (See avoiding-testing-anti-patterns Anti-Pattern 8 for detailed guidance)
 - [ ] **Test loading states**: Spinner/skeleton renders during loading
 - [ ] **Test success states**: Data displays correctly
 - [ ] **Test error states**: Error messages display on failures
@@ -271,7 +271,7 @@ BEFORE claiming UI work complete, verify ALL of these:
 
 **Evidence required**: Description of tested states and results
 
-**For detailed examples and test code, see testing-anti-patterns skill Anti-Pattern 8.**
+**For detailed examples and test code, see avoiding-testing-anti-patterns skill Anti-Pattern 8.**
 
 ## Frontend Verification Gate
 
@@ -493,7 +493,7 @@ All 6 tests pass successfully.
 ### Scenario 5: Frontend Component Implementation
 
 ```
-Agent: "I need to implement a checkout form component."
+Agent: "I need to implementing-features a checkout form component."
 
 [Uses frontend-visual-regression-testing + frontend-accessibility-verification]
 
@@ -612,7 +612,7 @@ This is non-negotiable.
 
 ## Git Hooks Integration
 
-If the project has git hooks enabled (via wrangler's setup-git-hooks skill), they provide automated verification:
+If the project has git hooks enabled (via wrangler's setting-up-git-hooks skill), they provide automated verification:
 
 ### Hooks as First-Line Verification
 

@@ -1,10 +1,10 @@
 ---
 name: reporting-status
-description: Generate situational awareness report showing new memos, recent commits, decisions, questions, and roadmap work since user's last sitrep. Use when user asks "what's new", "catch me up", "status update", "what did I miss", or "recent activity". ONLY invoke via /wrangler:sitrep command.
+description: Generate situational awareness report showing new memos, recent commits, decisions, questions, and roadmap work since user's last reporting-status. Use when user asks "what's new", "catch me up", "status update", "what did I miss", or "recent activity". ONLY invoke via /wrangler:reporting-status command.
 allowed-tools: ["Read", "Glob", "Grep", "Bash", "Task", "Write"]
 ---
 
-You are the sitrep workflow coordinator. Your job is to surface what's new since the user's last situational report, ensuring they don't evaluate priorities without knowing the latest learnings.
+You are the reporting-status workflow coordinator. Your job is to surface what's new since the user's last situational report, ensuring they don't evaluate priorities without knowing the latest learnings.
 
 ## Primary Value
 
@@ -46,7 +46,7 @@ Extract username: everything before the `@` symbol.
 
 ### 1.2 Load State File
 
-State files are stored in `.wrangler/cache/{username}-sitrep.json`
+State files are stored in `.wrangler/cache/{username}-reporting-status.json`
 
 **State file format:**
 ```json
@@ -76,7 +76,7 @@ Check if `--full` flag was passed in arguments:
 
 | Case | Handling |
 |------|----------|
-| No state file exists | First-run: show last 7 days, announce "First sitrep for {username}" |
+| No state file exists | First-run: show last 7 days, announce "First reporting-status for {username}" |
 | `--full` flag | Ignore cursor, treat as first-run |
 | State file corrupted/invalid JSON | Delete file, treat as first-run |
 | Username detection fails | Fallback to `anonymous` |
@@ -109,7 +109,7 @@ Launch **three parallel subagents** using the Task tool in a **single message**:
 **Task prompt:**
 
 ```
-Analyze git history for sitrep report.
+Analyze git history for reporting-status report.
 
 Cursor: {cursor_commit or "7 days ago"}
 
@@ -149,7 +149,7 @@ Return JSON format:
 **Task prompt:**
 
 ```
-Surface new memos for sitrep report. This is the MOST IMPORTANT subagent task.
+Surface new memos for reporting-status report. This is the MOST IMPORTANT subagent task.
 
 Cursor date: {cursor_date}
 
@@ -203,7 +203,7 @@ If no memos directory or no new memos, return:
 **Task prompt:**
 
 ```
-Gather issue and roadmap status for sitrep report.
+Gather issue and roadmap status for reporting-status report.
 
 Use MCP tools to query:
 1. issues_list({ status: ["open"] }) - Count open issues
@@ -243,7 +243,7 @@ If no issues or roadmap file:
 **CRITICAL:** All three Task tool calls must be in a **single message** to execute truly in parallel.
 
 ```
-I'm launching three parallel sitrep data gathering agents:
+I'm launching three parallel reporting-status data gathering agents:
 
 [Task tool - Subagent A: Git History Analysis]
 [Task tool - Subagent B: Memo Surfacing]
@@ -297,7 +297,7 @@ questions_count = len(open_questions)
 
 **Read `templates/report.md`** for the full report template and variable reference.
 
-Generate the sitrep report by:
+Generate the reporting-status report by:
 1. Reading the template from `templates/report.md`
 2. Substituting all variables with data from Phases 1-3
 3. Outputting the formatted markdown report
@@ -323,7 +323,7 @@ mkdir -p .wrangler/cache
 
 ### 5.2 Write Updated State File
 
-Write to `.wrangler/cache/{username}-sitrep.json`:
+Write to `.wrangler/cache/{username}-reporting-status.json`:
 
 ```json
 {
@@ -343,7 +343,7 @@ Write to `.wrangler/cache/{username}-sitrep.json`:
 
 ### 5.3 Confirm State Saved
 
-Announce: "Sitrep state saved. Next sitrep will start from commit {latest_commit_hash}."
+Announce: "Sitrep state saved. Next reporting-status will start from commit {latest_commit_hash}."
 
 ---
 
@@ -380,7 +380,7 @@ If not found:
 After implementation, verify these scenarios work:
 
 1. **First-run:** No state file → shows 7 days, creates state file
-2. **Incremental:** Add memo, run sitrep → only new memo appears
+2. **Incremental:** Add memo, run reporting-status → only new memo appears
 3. **--full flag:** Ignores cursor, shows everything
 4. **Multi-user:** Switch git user → separate state files
 5. **Decision extraction:** Memo with `## Decision` → appears in report
@@ -394,11 +394,11 @@ After implementation, verify these scenarios work:
 ### Read-Only Operations
 
 This skill is **read-only** for governance files:
-- Does NOT invoke refresh-metrics
+- Does NOT invoke refreshing-metrics
 - Does NOT update roadmap files
 - Does NOT modify issues
 
-Only writes to: `.wrangler/cache/{username}-sitrep.json`
+Only writes to: `.wrangler/cache/{username}-reporting-status.json`
 
 ### Subagent Types
 
@@ -416,31 +416,31 @@ For efficiency, subagents can use `model: "haiku"` since tasks are straightforwa
 
 ### Example 1: First Sitrep on Project
 
-**User:** `/wrangler:sitrep`
+**User:** `/wrangler:reporting-status`
 
 **Agent Response:**
-1. "First sitrep for samjhecht - showing last 7 days..."
+1. "First reporting-status for samjhecht - showing last 7 days..."
 2. Launches 3 parallel subagents
 3. Generates report with all activity from past week
 4. Creates state file with current cursor
 
 ### Example 2: Daily Check-in
 
-**User:** `/wrangler:sitrep`
+**User:** `/wrangler:reporting-status`
 
 **Agent Response:**
-1. "Loading sitrep state from 2 days ago..."
+1. "Loading reporting-status state from 2 days ago..."
 2. Launches 3 parallel subagents (filtered to since cursor)
-3. "2 new memos since last sitrep!"
+3. "2 new memos since last reporting-status!"
 4. Generates focused report
 5. Updates state file
 
 ### Example 3: Full Overview
 
-**User:** `/wrangler:sitrep --full`
+**User:** `/wrangler:reporting-status --full`
 
 **Agent Response:**
-1. "Full sitrep requested - ignoring cursor, showing last 7 days..."
+1. "Full reporting-status requested - ignoring cursor, showing last 7 days..."
 2. Same as first-run flow
 3. Updates cursor but doesn't reset stats
 
@@ -466,5 +466,5 @@ Sitrep is successful when:
 ## Related Skills
 
 - **housekeeping** - Uses similar multi-phase parallel subagent pattern
-- **refresh-metrics** - Reference for MCP tool usage patterns
-- **issues-housekeeper** - Validates project state (sitrep is read-only complement)
+- **refreshing-metrics** - Reference for MCP tool usage patterns
+- **issues-housekeeper** - Validates project state (reporting-status is read-only complement)

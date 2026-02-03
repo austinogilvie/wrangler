@@ -11,16 +11,16 @@ This skill allows updating existing git hooks configuration without going throug
 
 ## Prerequisites
 
-Hooks must already be set up. If not, use `setup-git-hooks` skill instead.
+Hooks must already be set up. If not, use `setting-up-git-hooks` skill instead.
 
 ```bash
 # Check if hooks are configured
-[ -f .wrangler/config/hooks-config.json ] && echo "Config exists" || echo "Run setup-git-hooks first"
+[ -f .wrangler/config/hooks-config.json ] && echo "Config exists" || echo "Run setting-up-git-hooks first"
 ```
 
 ## Activation Detection
 
-When user runs `/wrangler:update-git-hooks`, check if this is first activation:
+When user runs `/wrangler:updating-git-hooks`, check if this is first activation:
 
 1. Read `.wrangler/config/hooks-config.json`
 2. Check `setupComplete` field:
@@ -55,7 +55,7 @@ cat .wrangler/config/hooks-config.json
 ls -la .git/hooks/pre-commit .git/hooks/pre-push 2>/dev/null
 ```
 
-If config doesn't exist, inform user to run `setup-git-hooks` first.
+If config doesn't exist, inform user to run `setting-up-git-hooks` first.
 
 **Step 2: Display Current Settings**
 
@@ -173,7 +173,7 @@ For Pattern B:
 # Regenerate and keep symlinks intact
 ```
 
-Use same parameterization as `setup-git-hooks`:
+Use same parameterization as `setting-up-git-hooks`:
 - Replace `{{TEST_COMMAND}}` with new test command
 - Replace `{{UNIT_TEST_COMMAND}}` with new unit test command
 - etc.
@@ -270,7 +270,7 @@ Switching from Pattern A to Pattern B (or vice versa) requires full re-setup:
 
 ```
 This change requires full re-setup.
-Run /wrangler:setup-git-hooks to change installation patterns.
+Run /wrangler:setting-up-git-hooks to change installation patterns.
 ```
 
 ### No Changes Detected
@@ -291,15 +291,15 @@ If something goes wrong:
 cp .wrangler/config/hooks-config.json.backup .wrangler/config/hooks-config.json
 
 # Regenerate hooks with original config
-# Run /wrangler:update-git-hooks to regenerate
+# Run /wrangler:updating-git-hooks to regenerate
 ```
 
 ## Related Skills
 
-- **setup-git-hooks** - Initial hook installation
-- **run-the-tests** - Manual test execution
-- **test-driven-development** - TDD workflow with hooks
-- **verification-before-completion** - Verification requirements
+- **setting-up-git-hooks** - Initial hook installation
+- **running-tests** - Manual test execution
+- **practicing-tdd** - TDD workflow with hooks
+- **verifying-before-completion** - Verification requirements
 
 ## Common Updates
 

@@ -621,18 +621,18 @@ Run test: FAILS at step 4 (payment doesn't exist)
 - Incremental: When iterating rapidly, want fast feedback
 - Skeleton: When have complete flow spec, want to track overall progress
 
-**Both approaches follow TDD**: Write test, watch fail, implement, watch pass.
+**Both approaches follow TDD**: Write test, watch fail, implementing-features, watch pass.
 
-**Cross-reference:** See test-driven-development skill for core RED-GREEN-REFACTOR principles.
+**Cross-reference:** See practicing-tdd skill for core RED-GREEN-REFACTOR principles.
 
 ---
 
 ## Integration with Other Skills
 
 **Combines with:**
-- test-driven-development: Write E2E test BEFORE implementing flow (see E2E TDD section above)
+- practicing-tdd: Write E2E test BEFORE implementing flow (see E2E TDD section above)
 - condition-based-waiting: Wait for conditions, not time
-- verification-before-completion: E2E tests required for critical flows
+- verifying-before-completion: E2E tests required for critical flows
 - frontend-component-testing: Use component tests for most UI testing
 - frontend-accessibility-verification: E2E tests verify accessible selectors
 

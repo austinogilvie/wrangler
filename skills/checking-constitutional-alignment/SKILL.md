@@ -7,7 +7,7 @@ description: Verify feature requests align with project constitutional principle
 
 ## Purpose
 
-The constitution exists to prevent:
+The defining-constitution exists to prevent:
 - Scope creep from "interesting but misaligned" features
 - Violations of core design values
 - Decisions that contradict established principles
@@ -72,7 +72,7 @@ cat .wrangler/CONSTITUTION.md
 
 ### Phase 3: Apply Decision Framework
 
-**The constitution has a decision framework (5 standard questions).**
+**The defining-constitution has a decision framework (5 standard questions).**
 
 **For EACH question, provide detailed analysis:**
 
@@ -81,7 +81,7 @@ cat .wrangler/CONSTITUTION.md
 "Does this align with our core principles?"
 
 **Process:**
-1. List each principle from constitution
+1. List each principle from defining-constitution
 2. For each principle, analyze alignment:
    - ✅ **Aligns**: How this feature supports the principle
    - ❌ **Conflicts**: How this feature violates the principle
@@ -94,7 +94,7 @@ cat .wrangler/CONSTITUTION.md
 
 **Assessment**: ❌ **Conflicts**
 
-**Reasoning**: This feature adds 12 new configuration options, violating the principle "Prefer convention over configuration." The constitution explicitly lists "configuration for every possible option" as an anti-pattern.
+**Reasoning**: This feature adds 12 new configuration options, violating the principle "Prefer convention over configuration." The defining-constitution explicitly lists "configuration for every possible option" as an anti-pattern.
 
 **Relevant Quote**: "Delete code before adding configuration options" - This adds configuration instead of removing it.
 ```
@@ -218,7 +218,7 @@ cat .wrangler/CONSTITUTION.md
 ### Scope Assessment
 
 **Mission Alignment**:
-[North Star mission from constitution]
+[North Star mission from defining-constitution]
 
 **This Feature**:
 - Core to mission: [Yes/No - explain why]
@@ -242,13 +242,13 @@ cat .wrangler/CONSTITUTION.md
 ```markdown
 ## Anti-Pattern Check
 
-### Anti-Pattern 1: "[Quote from constitution]"
+### Anti-Pattern 1: "[Quote from defining-constitution]"
 
 **Violation**: ✅ Yes / ❌ No
 
 **Evidence**: [If yes, explain how proposal violates this anti-pattern]
 
-### Anti-Pattern 2: "[Quote from constitution]"
+### Anti-Pattern 2: "[Quote from defining-constitution]"
 
 **Violation**: ✅ Yes / ❌ No
 
@@ -266,11 +266,11 @@ cat .wrangler/CONSTITUTION.md
 ```markdown
 ## Example Comparison
 
-### Similar to Good Example: "[Quote good example from constitution]"
+### Similar to Good Example: "[Quote good example from defining-constitution]"
 
 **Similarity**: [How proposal resembles this good example]
 
-### Different from Bad Example: "[Quote bad example from constitution]"
+### Different from Bad Example: "[Quote bad example from defining-constitution]"
 
 **Difference**: [How proposal avoids this bad pattern]
 
@@ -291,7 +291,7 @@ cat .wrangler/CONSTITUTION.md
 - ALL 5 decision framework questions = ✅ or mostly ✅
 - NO anti-pattern violations
 - Aligns with most/all principles
-- Resembles good examples from constitution
+- Resembles good examples from defining-constitution
 
 **Output:**
 
@@ -406,13 +406,13 @@ This proposal does not align with project constitutional principles and should n
 
 **Conflict**: [How proposal violates this principle]
 
-**Constitutional Quote**: "[Quote from constitution]"
+**Constitutional Quote**: "[Quote from defining-constitution]"
 
 **Cannot Be Resolved Because**: [Why revision won't fix this]
 
 ### Anti-Pattern Violation
 
-**Anti-Pattern**: "[Quote anti-pattern from constitution]"
+**Anti-Pattern**: "[Quote anti-pattern from defining-constitution]"
 
 **Violation**: [How proposal violates this]
 
@@ -458,7 +458,7 @@ Rather than this feature, consider:
 ## Constitutional Alignment
 
 **Evaluated**: [YYYY-MM-DD]
-**Skill**: check-constitutional-alignment
+**Skill**: checking-constitutional-alignment
 **Result**: ✅ APPROVED
 
 [Include full analysis from Phase 3-5]
@@ -509,7 +509,7 @@ issues_create({
 **Response**:
 1. Note ambiguity explicitly
 2. Make best judgment call
-3. **Recommend**: "Run `constitution` skill to refine Principle [N]"
+3. **Recommend**: "Run `defining-constitution` skill to refine Principle [N]"
 4. Document assumption made for this check
 
 ### Proposal Would Require Constitutional Amendment
@@ -520,7 +520,7 @@ issues_create({
 ```markdown
 # Constitutional Alignment: ⚠️ REQUIRES AMENDMENT
 
-This proposal conflicts with current principles but may justify updating the constitution itself.
+This proposal conflicts with current principles but may justify updating the defining-constitution itself.
 
 ## Conflict
 [Which principle it violates]
@@ -529,7 +529,7 @@ This proposal conflicts with current principles but may justify updating the con
 [Why this feature is important enough to change principles]
 
 ## Recommendation
-1. Create constitutional amendment proposal (use `constitution` skill)
+1. Create constitutional amendment proposal (use `defining-constitution` skill)
 2. If amendment approved, re-evaluate this feature
 3. Do NOT proceed without formal amendment
 ```
@@ -540,7 +540,7 @@ This proposal conflicts with current principles but may justify updating the con
 
 **If you assess ❌ REJECT but user disagrees:**
 1. Review your analysis - did you miss something?
-2. Check if constitution is ambiguous (might need refinement)
+2. Check if defining-constitution is ambiguous (might need refinement)
 3. Present reasoning clearly, but defer to user's judgment
 4. If user overrides, document: "Approved despite [concern] per user decision"
 
@@ -578,7 +578,7 @@ Always provide:
 
 ## Related Skills
 
-- **constitution** - For refining ambiguous principles encountered during check
+- **defining-constitution** - For refining ambiguous principles encountered during check
 - **writing-plans** - For creating specification after approval
 - **brainstorming** - For revising proposals that need modification
 
@@ -586,4 +586,4 @@ Always provide:
 
 You are the constitutional guardian. Be rigorous but not dogmatic. The goal is alignment with principles, not rejection of ideas. When something doesn't align, help the user understand why and suggest aligned alternatives.
 
-The constitution exists to serve the project, not to block progress. But it must be respected - bypassing it for "just this once" destroys its value.
+The defining-constitution exists to serve the project, not to block progress. But it must be respected - bypassing it for "just this once" destroys its value.

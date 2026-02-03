@@ -256,7 +256,7 @@ Fully relevant. Applies to any new feature touching user, order, or payment tabl
 
 - `analyzing-implementations` - Analyze HOW code works (use for live code)
 - `locating-code` - Find WHERE to look (use before analysis)
-- `validating-roadmap` - Check specification consistency (use for specs)
+- `validating-roadmaps` - Check specification consistency (use for specs)
 
 ## Remember
 

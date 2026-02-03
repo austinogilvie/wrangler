@@ -83,7 +83,7 @@ Or offer to add it to the user's shell config for easy access:
 
 ```bash
 # Add to ~/.zshrc or ~/.bashrc
-source /path/to/wrangler/skills/update-yourself/scripts/update-wrangler.sh
+source /path/to/wrangler/skills/updating-wrangler/scripts/update-wrangler.sh
 
 # Then just run:
 update-wrangler

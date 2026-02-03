@@ -1,6 +1,6 @@
 ---
 name: initializing-governance
-description: Initialize complete governance framework in a project - creates constitution, roadmap, directory READMEs, and issue/spec templates with guided setup process
+description: Initialize complete governance framework in a project - creates defining-constitution, roadmap, directory READMEs, and issue/spec templates with guided setup process
 ---
 
 # Initialize Governance Framework
@@ -28,7 +28,7 @@ git rev-parse --show-toplevel
 ls -la .wrangler/ 2>/dev/null || echo "No .wrangler directory"
 
 # Check for existing governance docs
-[ -f .wrangler/CONSTITUTION.md ] && echo "Constitution exists" || echo "No constitution"
+[ -f .wrangler/CONSTITUTION.md ] && echo "Constitution exists" || echo "No defining-constitution"
 [ -f .wrangler/ROADMAP.md ] && echo "Roadmap exists" || echo "No roadmap"
 ```
 
@@ -91,21 +91,21 @@ Create standard process documentation files from skill templates:
 
 ```bash
 # Copy TESTING.md from skill template
-cp skills/initialize-governance/templates/TESTING.md .wrangler/TESTING.md
+cp skills/initializing-governance/templates/TESTING.md .wrangler/TESTING.md
 ```
 
-**TESTING.md** will be populated later by setup-git-hooks with actual test commands.
+**TESTING.md** will be populated later by setting-up-git-hooks with actual test commands.
 
 Initial state should have placeholder status:
 - Replace `{{STATUS_PLACEHOLDER}}` with: `**Status:** Not configured yet`
 - Leave `{{TEST_COMMAND}}` and other placeholders as-is
-- These will be filled in by setup-git-hooks
+- These will be filled in by setting-up-git-hooks
 
 **Note on Templates**: Issue and specification templates live in their respective skills:
-- Issue template: `skills/create-new-issue/templates/TASK_ISSUE_TEMPLATE.md`
+- Issue template: `skills/creating-issues/templates/TASK_ISSUE_TEMPLATE.md`
 - Specification template: `skills/writing-specifications/templates/SPECIFICATION_TEMPLATE.md`
-- Security checklist: `skills/initialize-governance/templates/SECURITY_CHECKLIST.md`
-- Definition of Done: `skills/initialize-governance/templates/DEFINITION_OF_DONE.md`
+- Security checklist: `skills/initializing-governance/templates/SECURITY_CHECKLIST.md`
+- Definition of Done: `skills/initializing-governance/templates/DEFINITION_OF_DONE.md`
 
 These are referenced directly from skills, not copied to `.wrangler/templates/`.
 
@@ -114,8 +114,8 @@ These are referenced directly from skills, not copied to `.wrangler/templates/`.
 After governance files are created, automatically set up git hooks:
 
 ```bash
-# Invoke setup-git-hooks skill
-Skill: setup-git-hooks
+# Invoke setting-up-git-hooks skill
+Skill: setting-up-git-hooks
 ```
 
 This will:
@@ -125,11 +125,11 @@ This will:
 - Install hooks to `.git/hooks/` directory
 - Handle empty projects gracefully (creates placeholders)
 
-Users can reconfigure later with `/wrangler:update-git-hooks` command.
+Users can reconfigure later with `/wrangler:updating-git-hooks` command.
 
 ### Phase 2: Constitution Creation
 
-**If user has existing principles**: Use the `constitution` skill (invoke with Skill tool) to help them refine and formalize.
+**If user has existing principles**: Use the `defining-constitution` skill (invoke with Skill tool) to help them refine and formalize.
 
 **If user needs help creating principles**: Guide them through brainstorming process:
 
@@ -167,11 +167,11 @@ For each core value, help user formulate as concrete principle:
 
 **3. Write Constitution File**
 
-Use the template from `skills/constitution/templates/_CONSTITUTION.md`:
+Use the template from `skills/defining-defining-constitution/templates/_CONSTITUTION.md`:
 
 ```bash
 # Copy template (if not using the skill to generate it)
-cp /path/to/wrangler/skills/constitution/templates/_CONSTITUTION.md .wrangler/CONSTITUTION.md
+cp /path/to/wrangler/skills/defining-defining-constitution/templates/_CONSTITUTION.md .wrangler/CONSTITUTION.md
 ```
 
 Then use Edit tool to fill in:
@@ -219,26 +219,26 @@ For subsequent phases (can be less detailed):
 
 **3. Write Roadmap File**
 
-Use template from `skills/validating-roadmap/templates/_ROADMAP.md`:
+Use template from `skills/validating-roadmaps/templates/_ROADMAP.md`:
 
 ```bash
 # Copy template (if not using the skill to generate it)
-cp /path/to/wrangler/skills/validating-roadmap/templates/_ROADMAP.md .wrangler/ROADMAP.md
+cp /path/to/wrangler/skills/validating-roadmaps/templates/_ROADMAP.md .wrangler/ROADMAP.md
 ```
 
 Fill in with Edit tool:
 - Project name and overview
 - Current state (what's already done)
 - Each phase with timeline, goal, features, success metrics
-- Link to constitution principles
+- Link to defining-constitution principles
 
 **4. Write Next Steps File**
 
-Use template from `skills/validating-roadmap/templates/_ROADMAP__NEXT_STEPS.md`:
+Use template from `skills/validating-roadmaps/templates/_ROADMAP__NEXT_STEPS.md`:
 
 ```bash
 # Copy template (if not using the skill to generate it)
-cp /path/to/wrangler/skills/validating-roadmap/templates/_ROADMAP__NEXT_STEPS.md .wrangler/ROADMAP_NEXT_STEPS.md
+cp /path/to/wrangler/skills/validating-roadmaps/templates/_ROADMAP__NEXT_STEPS.md .wrangler/ROADMAP_NEXT_STEPS.md
 ```
 
 Initial file should reflect current state:
@@ -249,7 +249,7 @@ Initial file should reflect current state:
 
 **1. Create Issues README**
 
-Create a minimal README with status metrics using template from `skills/initialize-governance/templates/issues-README.md`.
+Create a minimal README with status metrics using template from `skills/initializing-governance/templates/issues-README.md`.
 
 Use Edit tool to:
 - Update "Status" section with current counts (run `issues_list` to get counts)
@@ -258,7 +258,7 @@ Use Edit tool to:
 
 **2. Create Specifications README**
 
-Create a minimal README with status metrics using template from `skills/initialize-governance/templates/specifications-README.md`.
+Create a minimal README with status metrics using template from `skills/initializing-governance/templates/specifications-README.md`.
 
 Use Edit tool to:
 - Update "Status" section with current counts
@@ -267,7 +267,7 @@ Use Edit tool to:
 - Keep rest as guidance
 
 **Note**: Templates remain in their skill directories and are referenced directly:
-- Issue template: `skills/create-new-issue/templates/TASK_ISSUE_TEMPLATE.md`
+- Issue template: `skills/creating-issues/templates/TASK_ISSUE_TEMPLATE.md`
 - Specification template: `skills/writing-specifications/templates/SPECIFICATION_TEMPLATE.md`
 
 No copying to `.wrangler/templates/` is needed. Skills reference templates from their own directories.
@@ -310,7 +310,7 @@ Before implementing any feature:
 5. Follow TDD implementation
 6. Update progress in NEXT_STEPS
 
-**Critical**: Use the `check-constitutional-alignment` skill before starting new features.
+**Critical**: Use the `checking-constitutional-alignment` skill before starting new features.
 ```
 
 **2. Verify All Files Created**
@@ -370,16 +370,16 @@ This project now has a complete governance framework to ensure alignment between
 
 - [ ] Read CONSTITUTION.md thoroughly
 - [ ] Review ROADMAP.md phases
-- [ ] Identify first features to implement
+- [ ] Identify first features to implementing-features
 - [ ] Create specifications for Phase 1 features
 - [ ] Begin implementation following governance
 
 ### Skills Available
 
-- \`check-constitutional-alignment\` - Verify feature alignment
-- \`constitution\` - Refine principles and clarity
-- \`verify-governance\` - Check governance integrity
-- \`refresh-metrics\` - Update status metrics
+- \`checking-constitutional-alignment\` - Verify feature alignment
+- \`defining-constitution\` - Refine principles and clarity
+- \`verifying-governance\` - Check governance integrity
+- \`refreshing-metrics\` - Update status metrics
 
 Close this issue once you've reviewed all governance documents.
   `,
@@ -415,7 +415,7 @@ Your project now has a complete governance system ensuring we stay aligned on:
 **Process Documentation** (in `.wrangler/`):
 - `issues/README.md` - Issue management guide
 - `specifications/README.md` - Specification guide
-- `TESTING.md` - Test documentation (created here, populated by setup-git-hooks)
+- `TESTING.md` - Test documentation (created here, populated by setting-up-git-hooks)
 
 **Git Hooks** (always enabled):
 - `.wrangler/config/hooks-config.json` - Hook configuration
@@ -426,7 +426,7 @@ Your project now has a complete governance system ensuring we stay aligned on:
 
 1. **Review Constitution**: Read `.wrangler/CONSTITUTION.md`
    - Verify principles match your vision
-   - Use `constitution` skill if refinement needed
+   - Use `defining-constitution` skill if refinement needed
 
 2. **Review Roadmap**: Read `.wrangler/ROADMAP.md`
    - Confirm phases and timelines
@@ -442,7 +442,7 @@ Your project now has a complete governance system ensuring we stay aligned on:
 ```
 Feature Request
     ↓
-Constitutional Check (use check-constitutional-alignment skill)
+Constitutional Check (use checking-constitutional-alignment skill)
     ↓ (if aligned)
 Specification (create with constitutional alignment section)
     ↓
@@ -457,10 +457,10 @@ Update NEXT_STEPS (mark features complete)
 
 ### Skills for Governance
 
-- **check-constitutional-alignment** - Verify feature fits principles
-- **constitution** - Refine and clarify principles
-- **verify-governance** - Check framework integrity
-- **refresh-metrics** - Update status counts
+- **checking-constitutional-alignment** - Verify feature fits principles
+- **defining-constitution** - Refine and clarify principles
+- **verifying-governance** - Check framework integrity
+- **refreshing-metrics** - Update status counts
 
 **You're all set!** We're now "of one mind" on project governance.
 ```
@@ -489,10 +489,10 @@ Update NEXT_STEPS (mark features complete)
 **Approach**:
 1. Use researching-web-sources skill to find examples:
    - "software design principles"
-   - "project constitution examples"
+   - "project defining-constitution examples"
    - "engineering team values"
 2. Present 3-4 common principles as starting point
-3. Offer to use `constitution` skill for deep refinement
+3. Offer to use `defining-constitution` skill for deep refinement
 
 ### If Project is Very Small
 
@@ -501,7 +501,7 @@ Update NEXT_STEPS (mark features complete)
 **Approach**:
 1. Still create full governance (future-proofing)
 2. Explain: "Even small projects benefit from clear principles"
-3. Suggest simplified constitution (3 principles instead of 5+)
+3. Suggest simplified defining-constitution (3 principles instead of 5+)
 4. Suggest single-phase roadmap
 
 ## Success Criteria
@@ -515,37 +515,37 @@ Initialization is complete when:
 - [ ] Welcome issue created
 - [ ] User has reviewed all documents
 - [ ] CLAUDE.md updated (if exists)
-- [ ] TESTING.md created from template (placeholder status, to be populated by setup-git-hooks)
+- [ ] TESTING.md created from template (placeholder status, to be populated by setting-up-git-hooks)
 - [ ] Git hooks set up (automatically invoked during initialization)
 
 ## Important Notes
 
 **Template Paths**: Templates are in skill-specific directories:
-- Constitution: `skills/constitution/templates/`
-- Roadmap: `skills/validating-roadmap/templates/`
-- Issues: `skills/create-new-issue/templates/`
+- Constitution: `skills/defining-defining-constitution/templates/`
+- Roadmap: `skills/validating-roadmaps/templates/`
+- Issues: `skills/creating-issues/templates/`
 - Specifications: `skills/writing-specifications/templates/`
-- Process docs: `skills/initialize-governance/templates/` (TESTING.md, SECURITY_CHECKLIST.md, DEFINITION_OF_DONE.md)
+- Process docs: `skills/initializing-governance/templates/` (TESTING.md, SECURITY_CHECKLIST.md, DEFINITION_OF_DONE.md)
 
 **Use Copy, Not Move**: Always copy templates, never move them (templates stay in wrangler)
 
 **Preserve User Content**: If enhancing existing files, never delete user content
 
-**Constitutional First**: The constitution is most important - spend time here
+**Constitutional First**: The defining-constitution is most important - spend time here
 
 **Roadmap Can Evolve**: Roadmap will change - it's okay to start simple
 
-**Metrics Will Update**: Don't worry about exact metrics now - refresh-metrics skill handles this
+**Metrics Will Update**: Don't worry about exact metrics now - refreshing-metrics skill handles this
 
 ## Related Skills
 
-- **constitution** - For deep principle refinement and clarification
-- **check-constitutional-alignment** - For verifying features align with principles
-- **verify-governance** - For checking governance file integrity
-- **refresh-metrics** - For updating status counts in READMEs and NEXT_STEPS
-- **setup-git-hooks** - For setting up git hooks enforcement
-- **update-git-hooks** - For modifying existing git hooks configuration
+- **defining-constitution** - For deep principle refinement and clarification
+- **checking-constitutional-alignment** - For verifying features align with principles
+- **verifying-governance** - For checking governance file integrity
+- **refreshing-metrics** - For updating status counts in READMEs and NEXT_STEPS
+- **setting-up-git-hooks** - For setting up git hooks enforcement
+- **updating-git-hooks** - For modifying existing git hooks configuration
 
 ## Remember
 
-You're establishing the foundation for perfect alignment between AI and human. Take time to make the constitution solid - everything else builds on this foundation.
+You're establishing the foundation for perfect alignment between AI and human. Take time to make the defining-constitution solid - everything else builds on this foundation.

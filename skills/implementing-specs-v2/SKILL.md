@@ -1,13 +1,13 @@
 ---
 name: implementing-specs-v2
-description: GitHub-centric specification implementation orchestrating writing-plans and implement skills
+description: GitHub-centric specification implementation orchestrating writing-plans and implementing-features skills
 ---
 
-# implement-spec-v2: Modular Specification Implementation
+# implementing-features-spec-v2: Modular Specification Implementation
 
 ## Purpose
 
-Orchestrates specification implementation by invoking existing wrangler skills (writing-plans, implement) rather than reimplementing their logic. Focuses on workflow coordination and compliance verification.
+Orchestrates specification implementation by invoking existing wrangler skills (writing-plans, implementing-features) rather than reimplementing their logic. Focuses on workflow coordination and compliance verification.
 
 ## When to Use
 
@@ -28,15 +28,15 @@ Orchestrates specification implementation by invoking existing wrangler skills (
 
 This skill orchestrates existing wrangler skills rather than reimplementing their logic:
 
-**Phase 1 (INIT)**: Uses `session_start` MCP tool (from implement-spec skill)
+**Phase 1 (INIT)**: Uses `session_start` MCP tool (from implementing-features-spec skill)
 **Phase 2 (PLAN)**: Invokes `writing-plans` skill to create MCP issues
-**Phase 3 (EXECUTE)**: Invokes `implement` skill for each issue
+**Phase 3 (EXECUTE)**: Invokes `implementing-features` skill for each issue
 **Phase 4 (VERIFY)**: LLM-based compliance audit
 **Phase 5 (PUBLISH)**: GitHub PR finalization
 
 **Benefits of this approach:**
 - No duplicated planning logic (writing-plans is source of truth)
-- No duplicated implementation logic (implement is source of truth)
+- No duplicated implementation logic (implementing-features is source of truth)
 - Modular and maintainable (changes to planning flow in one place)
 - Testable (each skill can be tested independently)
 
@@ -102,7 +102,7 @@ Worktree must exist and be on correct branch.
 
 ### Reference Implementation
 
-See `implement-spec` skill for detailed session_start usage patterns.
+See `implementing-features-spec` skill for detailed session_start usage patterns.
 
 ---
 
@@ -202,7 +202,7 @@ Break specification into implementable tasks tracked as MCP issues.
      tasksCompleted: [],
      tasksPending: ISSUE_IDS,
      lastAction: "Created implementation plan with {TASK_COUNT} tasks",
-     resumeInstructions: "Continue with execute phase, implement issues: {ISSUE_IDS}"
+     resumeInstructions: "Continue with execute phase, implementing-features issues: {ISSUE_IDS}"
    )
    ```
 
@@ -229,7 +229,7 @@ Planning succeeds and issues are created. If planning fails or returns blockers,
 
 ## Phase 3: EXECUTE
 
-Implement all tasks using implement skill.
+Implement all tasks using implementing-features skill.
 
 ### Objective
 
@@ -242,12 +242,12 @@ Execute all implementation tasks with TDD and code review.
    session_phase(sessionId: SESSION_ID, phase: "execute", status: "started")
    ```
 
-2. **Invoke implement skill for each issue**
+2. **Invoke implementing-features skill for each issue**
 
-   Use the `implement` skill with worktree context:
+   Use the `implementing-features` skill with worktree context:
 
    ```markdown
-   I'm using the implement skill to execute all tasks.
+   I'm using the implementing-features skill to execute all tasks.
 
    ## Context for Implement Skill
 
@@ -306,17 +306,17 @@ Execute all implementation tasks with TDD and code review.
 ### Outputs
 
 - All issues implemented
-- Tests passing (verified by implement skill)
-- Code reviewed (handled by implement skill)
+- Tests passing (verified by implementing-features skill)
+- Code reviewed (handled by implementing-features skill)
 - PR description shows progress
 
 ### Quality Gate
 
-All tasks complete (implement skill handles escalation for blockers). If any task cannot be completed, session pauses.
+All tasks complete (implementing-features skill handles escalation for blockers). If any task cannot be completed, session pauses.
 
 ### Why This Works
 
-The implement skill already handles:
+The implementing-features skill already handles:
 - Subagent dispatch with worktree context
 - TDD enforcement
 - Code review automation
@@ -660,7 +660,7 @@ See `examples/` directory for detailed examples:
 
 ## Compliance Notes
 
-- **Always follow TDD:** Tests before implementation (enforced by implement skill)
+- **Always follow TDD:** Tests before implementation (enforced by implementing-features skill)
 - **Never skip VERIFY:** Mandatory compliance check (100% required)
 - **Use PR as audit trail:** All progress visible in GitHub
 - **Update PR regularly:** Keep stakeholders informed
@@ -672,7 +672,7 @@ See `examples/` directory for detailed examples:
 
 **Phase 1 (INIT):**
 - Uses `session_start` MCP tool (from wrangler MCP server)
-- Pattern from `implement-spec` skill
+- Pattern from `implementing-features-spec` skill
 
 **Phase 2 (PLAN):**
 - Invokes `writing-plans` skill (subagent dispatch)
@@ -680,9 +680,9 @@ See `examples/` directory for detailed examples:
 - Optional plan file for architecture context
 
 **Phase 3 (EXECUTE):**
-- Invokes `implement` skill (autonomous execution)
-- TDD enforcement via `test-driven-development` skill
-- Code review via `requesting-code-review` skill
+- Invokes `implementing-features` skill (autonomous execution)
+- TDD enforcement via `practicing-tdd` skill
+- Code review via `requesting-reviewing-code` skill
 
 **Phase 4 (VERIFY):**
 - LLM-based extraction (intelligent, not brittle)
@@ -695,7 +695,7 @@ See `examples/` directory for detailed examples:
 
 This modular approach means:
 - Changes to planning logic happen in `writing-plans` (one place)
-- Changes to implementation logic happen in `implement` (one place)
+- Changes to implementation logic happen in `implementing-features` (one place)
 - This skill focuses on orchestration and verification
 - No duplication, easier to maintain
 

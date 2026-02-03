@@ -161,10 +161,10 @@ Think of yourself as a technical writer documenting an existing system for someo
 **User**: "Help me understand what this error handler is doing"
 **You**: Read error handling code, trace error flow, document recovery mechanisms, note logging
 
-**Note**: Pairs well with `systematic-debugging` skill when debugging. Use this skill to understand how code works, use systematic-debugging to find why it's broken.
+**Note**: Pairs well with `debugging-systematically` skill when debugging. Use this skill to understand how code works, use debugging-systematically to find why it's broken.
 
 ## Related Skills
 
 - `locating-code` - Find WHERE code lives (use before analysis)
 - `finding-code-patterns` - Find similar implementations for reference
-- `systematic-debugging` - Debug issues (use after understanding implementation)
+- `debugging-systematically` - Debug issues (use after understanding implementation)

@@ -129,10 +129,10 @@ description: Comprehensive code review framework for evaluating implementations 
 
 2. **Request TDD Compliance Certification**
 
-   Ask implementer to provide certification from test-driven-development skill:
+   Ask implementer to provide certification from practicing-tdd skill:
 
    "Please provide TDD Compliance Certification for each function
-    (format from test-driven-development skill)."
+    (format from practicing-tdd skill)."
 
    **Verify:**
    - [ ] Certification provided for all new functions
@@ -143,7 +143,7 @@ description: Comprehensive code review framework for evaluating implementations 
    **If certification missing or incomplete**: Flag as Important issue
    ```
    IMPORTANT: TDD Compliance Certification required.
-   Must provide certification with one entry per function (see test-driven-development skill).
+   Must provide certification with one entry per function (see practicing-tdd skill).
    Certification proves RED-GREEN-REFACTOR cycle was followed.
    ```
 
@@ -170,7 +170,7 @@ description: Comprehensive code review framework for evaluating implementations 
    ```
    CRITICAL: Tests for [function_name] pass without implementation.
    Tests are not actually testing the code.
-   See testing-anti-patterns skill (Anti-Pattern 1: Testing Mock Behavior).
+   See avoiding-testing-anti-patterns skill (Anti-Pattern 1: Testing Mock Behavior).
    Rewrite tests to verify real behavior.
    ```
 
@@ -247,7 +247,7 @@ Recommendations:
 - No test-only methods in production code
 - Tests fail when they should (RED-GREEN-REFACTOR)
 
-**See Also**: `testing-anti-patterns` skill for what NOT to do, `test-driven-development` skill for TDD process
+**See Also**: `avoiding-testing-anti-patterns` skill for what NOT to do, `practicing-tdd` skill for TDD process
 
 **Output**: Testing gaps, quality issues, and TDD compliance status
 
@@ -429,7 +429,7 @@ Structure your review as follows:
 
 ### Requesting Review
 
-See `requesting-code-review` skill for how to invoke this review process.
+See `requesting-reviewing-code` skill for how to invoke this review process.
 
 **When to review**:
 - After completing each task (subagent-driven development)
@@ -439,7 +439,7 @@ See `requesting-code-review` skill for how to invoke this review process.
 
 ### Receiving Review
 
-See `receiving-code-review` skill for how to handle review feedback.
+See `receiving-reviewing-code` skill for how to handle review feedback.
 
 **Key principles**:
 - Verify before implementing
@@ -450,9 +450,9 @@ See `receiving-code-review` skill for how to handle review feedback.
 ### Integration with Other Skills
 
 **Integration with:**
-- `test-driven-development`: Reviewers verify TDD was followed
-- `testing-anti-patterns`: Reference when tests smell wrong
-- `verification-before-completion`: Ensure verification happened before review
+- `practicing-tdd`: Reviewers verify TDD was followed
+- `avoiding-testing-anti-patterns`: Reference when tests smell wrong
+- `verifying-before-completion`: Ensure verification happened before review
 
 ---
 
@@ -550,7 +550,7 @@ try {
 - **Problematic** if multi-instance deployment (cache not shared)
 - **Acceptable** if single instance and plan didn't specify why Redis
 
-**Recommendation**: Clarify deployment model. If multi-instance, implement Redis as planned.
+**Recommendation**: Clarify deployment model. If multi-instance, implementing-features Redis as planned.
 
 ---
 
@@ -570,7 +570,7 @@ it('should process order', () => {
 
 **Fix**: Add integration tests that test real behavior with test database/payment sandbox
 
-**See**: `testing-anti-patterns` skill
+**See**: `avoiding-testing-anti-patterns` skill
 
 ---
 
@@ -688,4 +688,4 @@ A successful code review:
 
 ---
 
-*See also*: `requesting-code-review`, `receiving-code-review`, `testing-anti-patterns`, `verification-before-completion`
+*See also*: `requesting-reviewing-code`, `receiving-reviewing-code`, `avoiding-testing-anti-patterns`, `verifying-before-completion`

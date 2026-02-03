@@ -85,18 +85,18 @@ Subagents can work concurrently without interfering:
   3. Or set up isolated test environments (Docker containers, separate DBs)
 
 **If failures are NOT independent:**
-  Do NOT use parallel agents. Use systematic-debugging to find root cause.
+  Do NOT use parallel agents. Use debugging-systematically to find root cause.
 
 ## Decision Tree: When to Use Parallel Agents
 
 ```
 Do you have 3+ failures?
-├─ NO → Use systematic-debugging (single failure investigation)
+├─ NO → Use debugging-systematically (single failure investigation)
 └─ YES → Continue
 
 Are failures logically independent?
 (Can each be investigated without knowing about others?)
-├─ NO → Use systematic-debugging (find common root cause)
+├─ NO → Use debugging-systematically (find common root cause)
 └─ YES → Continue
 
 Is investigation parallel-safe?
@@ -246,7 +246,7 @@ Return: Summary of what you found and what you fixed.
 - Root cause is shared (session creation broken)
 - Cannot investigate Profile/Settings without understanding Auth failure
 
-**Decision:** Do NOT dispatch parallel agents. Use systematic-debugging to find root cause in auth system first.
+**Decision:** Do NOT dispatch parallel agents. Use debugging-systematically to find root cause in auth system first.
 
 ## When NOT to Use
 

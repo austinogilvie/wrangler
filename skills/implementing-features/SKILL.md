@@ -1,6 +1,6 @@
 ---
 name: implementing-features
-description: Autonomously implement tasks from specs, plans, or issues using subagents with TDD and code review
+description: Autonomously implementing-features tasks from specs, plans, or issues using subagents with TDD and code review
 ---
 
 # Implement
@@ -11,7 +11,7 @@ Autonomous implementation workflow that handles specifications, plans, issue ran
 
 **Core principle:** Dispatch subagent per task, automatic code review and fixes, only stop for genuine blockers
 
-**Entry point:** `/wrangler:implement [scope]`
+**Entry point:** `/wrangler:implementing-features [scope]`
 
 **Works in main branch OR worktree (no preference)**
 
@@ -32,14 +32,14 @@ Autonomous implementation workflow that handles specifications, plans, issue ran
 
 ## Scope Parsing
 
-The skill automatically determines what to implement based on your input.
+The skill automatically determines what to implementing-features based on your input.
 
 ### Supported Formats
 
 **1. Specification files**
 
 ```bash
-/wrangler:implement spec-auth-system.md
+/wrangler:implementing-features spec-auth-system.md
 ```
 
 → Loads spec from `.wrangler/specifications/`
@@ -49,7 +49,7 @@ The skill automatically determines what to implement based on your input.
 **2. Plan files**
 
 ```bash
-/wrangler:implement plan-refactor.md
+/wrangler:implementing-features plan-refactor.md
 ```
 
 → Loads plan from `.wrangler/plans/`
@@ -59,8 +59,8 @@ The skill automatically determines what to implement based on your input.
 **3. Single issue**
 
 ```bash
-/wrangler:implement issue #42
-/wrangler:implement issue 42
+/wrangler:implementing-features issue #42
+/wrangler:implementing-features issue 42
 ```
 
 → Loads issue from MCP using issues_get
@@ -70,8 +70,8 @@ The skill automatically determines what to implement based on your input.
 **4. Issue range**
 
 ```bash
-/wrangler:implement issues 5-7
-/wrangler:implement issues 5,6,7
+/wrangler:implementing-features issues 5-7
+/wrangler:implementing-features issues 5,6,7
 ```
 
 → Loads multiple issues from MCP
@@ -80,7 +80,7 @@ The skill automatically determines what to implement based on your input.
 **5. Context inference (no parameter)**
 
 ```bash
-/wrangler:implement
+/wrangler:implementing-features
 ```
 
 → Scans last 5 user messages for file or issue references
@@ -255,19 +255,19 @@ Prompt: |
 
   1. **Verify location** (FIRST - see above)
 
-  2. **Follow TDD** (test-driven-development skill):
+  2. **Follow TDD** (practicing-tdd skill):
      - RED: Write failing test first
      - GREEN: Implement minimal code to pass
      - REFACTOR: Improve code quality
 
   3. **Create TDD Compliance Certification**
-     For each function you implement, document:
+     For each function you implementing-features, document:
      - Function name and signature
      - Test file path
      - Whether you followed RED-GREEN-REFACTOR
      - Any deviations justified
 
-     Format (from test-driven-development skill):
+     Format (from practicing-tdd skill):
      ```
      | Function | Test File | Watched Fail? | Watched Pass? | Notes |
      |----------|-----------|---------------|---------------|-------|
@@ -377,7 +377,7 @@ After each task's implementation subagent completes, automatically request and h
 
 ### Step 1: Dispatch Code Reviewer
 
-Use the Task tool with requesting-code-review template:
+Use the Task tool with requesting-reviewing-code template:
 
 ```markdown
 Tool: Task
@@ -406,7 +406,7 @@ Prompt: |
 
   ## Your Job
 
-  Follow the code-review skill framework:
+  Follow the reviewing-code skill framework:
 
   1. **Review the implementation** against requirements
   2. **Identify issues** and categorize:
@@ -421,7 +421,7 @@ Prompt: |
 
   4. **Return structured report**
 
-  See requesting-code-review skill for full template.
+  See requesting-reviewing-code skill for full template.
 ```
 
 ### Step 2: Parse Review Feedback
@@ -502,7 +502,7 @@ For each Critical issue:
 
      ## Your Job
 
-     Start from scratch. Analyze the problem fresh and implement a different approach.
+     Start from scratch. Analyze the problem fresh and implementing-features a different approach.
 
      1. Read the code to understand current state
      2. Implement fix using a DIFFERENT approach than previous attempt
@@ -1035,7 +1035,7 @@ PRESENT SUMMARY TO USER + INVOKE finishing-a-development-branch
 ### Example 1: Implementing a Specification
 
 ```
-User: /wrangler:implement spec-auth-system.md
+User: /wrangler:implementing-features spec-auth-system.md
 
 SCOPE PARSING:
 → Detected: Specification file
@@ -1123,7 +1123,7 @@ Ready for next steps.
 ### Example 2: Implementing an Issue Range
 
 ```
-User: /wrangler:implement issues 10-12
+User: /wrangler:implementing-features issues 10-12
 
 SCOPE PARSING:
 → Detected: Issue range
@@ -1148,7 +1148,7 @@ Issues 10-11 complete, Issue 12 blocked (escalated to user)
 
 ```
 User: Here's the plan file for the refactor (attached plan-db-refactor.md)
-User: /wrangler:implement
+User: /wrangler:implementing-features
 
 SCOPE PARSING:
 → No scope parameter provided
@@ -1172,7 +1172,7 @@ If you catch yourself doing any of these, STOP - you're using the skill incorrec
 
 **❌ Guessing or making assumptions about unclear requirements**
 - If requirements are ambiguous, ESCALATE immediately
-- Don't implement based on "probably what they meant"
+- Don't implementing-features based on "probably what they meant"
 - User clarification is better than wrong implementation
 
 **❌ Proceeding with failing tests "to check with user later"**
@@ -1213,21 +1213,21 @@ If you catch yourself doing any of these, STOP - you're using the skill incorrec
 ## Integration with Other Skills
 
 **Required sub-skills** (must be available):
-- `test-driven-development` - Subagents follow TDD for implementation
-- `verification-before-completion` - Final verification checklist
-- `requesting-code-review` - Code review template for reviewer subagents
+- `practicing-tdd` - Subagents follow TDD for implementation
+- `verifying-before-completion` - Final verification checklist
+- `requesting-reviewing-code` - Code review template for reviewer subagents
 - `finishing-a-development-branch` - Present completion options
 
 **Optional but recommended:**
 - `using-git-worktrees` - If user wants isolated environment
-- `systematic-debugging` - If complex bugs encountered during implementation
+- `debugging-systematically` - If complex bugs encountered during implementation
 
 **Replaced by this skill** (deprecated):
 - `executing-plans` - Old batch execution model (DELETE)
 - `subagent-driven-development` - Old same-session execution (DELETE)
 
 **When to use this skill vs. alternatives:**
-- Use `implement` for: Full execution of specs/plans/issues
+- Use `implementing-features` for: Full execution of specs/plans/issues
 - Use `writing-plans` for: Creating implementation plans (before executing)
 - Use `brainstorming` for: Refining ideas (before planning)
 - Use manual execution for: User wants control over each step (rare)
@@ -1235,12 +1235,12 @@ If you catch yourself doing any of these, STOP - you're using the skill incorrec
 ## Troubleshooting
 
 **"Cannot infer scope" error:**
-→ Provide explicit scope: `/wrangler:implement spec-name.md`
+→ Provide explicit scope: `/wrangler:implementing-features spec-name.md`
 → Or reference file in message before running command
 
 **Subagent not providing TDD Compliance Certification:**
 → Request it explicitly: "Please provide TDD Compliance Certification"
-→ Template is in test-driven-development skill
+→ Template is in practicing-tdd skill
 
 **Code review taking too long:**
 → Check task size - should be <250 LOC per task

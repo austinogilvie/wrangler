@@ -116,7 +116,7 @@ Run test: PASSES
 - Both follow TDD, but visual baseline generation is a special case
 - Baseline generation doesn't violate "watch it fail" - the failure comes when you change CSS and screenshot differs
 
-**Cross-reference:** See test-driven-development skill for core RED-GREEN-REFACTOR principles.
+**Cross-reference:** See practicing-tdd skill for core RED-GREEN-REFACTOR principles.
 
 ## Step-by-Step Process
 
@@ -394,8 +394,8 @@ THEN:
 ## Integration with Other Skills
 
 **Combines with:**
-- test-driven-development: Visual tests follow TDD cycle
-- verification-before-completion: Visual verification required
+- practicing-tdd: Visual tests follow TDD cycle
+- verifying-before-completion: Visual verification required
 - frontend-accessibility-verification: Check a11y after visual verification
 
 ## Common Rationalizations

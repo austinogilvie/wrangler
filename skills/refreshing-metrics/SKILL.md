@@ -258,7 +258,7 @@ const overallPct = Math.round(
 **6. Update Last Updated**
 
 ```markdown
-**Last Updated By**: Claude Code (refresh-metrics skill)
+**Last Updated By**: Claude Code (refreshing-metrics skill)
 **Next Review**: [current date + 30 days]
 ```
 
@@ -480,7 +480,7 @@ Metrics refresh is complete when:
 - [ ] Specifications README metrics updated
 - [ ] Specifications README "Last Updated" date set to today
 - [ ] Next Steps executive summary updated with current %
-- [ ] Next Steps "Last Updated By" set to "Claude Code (refresh-metrics skill)"
+- [ ] Next Steps "Last Updated By" set to "Claude Code (refreshing-metrics skill)"
 - [ ] Constitutional compliance % calculated and updated
 - [ ] Top projects list updated
 - [ ] Update report generated and presented
@@ -496,13 +496,13 @@ Metrics refresh is complete when:
 **Can be triggered by**:
 - Direct invocation: "Refresh governance metrics"
 - Housekeeping skill: As part of regular cleanup
-- verify-governance skill: If metrics flagged as stale
+- verifying-governance skill: If metrics flagged as stale
 
 ## Related Skills
 
-- **verify-governance** - Detects stale metrics and recommends this skill
+- **verifying-governance** - Detects stale metrics and recommends this skill
 - **housekeeping** - Can invoke this as part of regular maintenance
-- **check-constitutional-alignment** - Uses compliance metrics calculated here
+- **checking-constitutional-alignment** - Uses compliance metrics calculated here
 
 ## Important Notes
 

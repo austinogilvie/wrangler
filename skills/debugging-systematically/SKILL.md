@@ -111,7 +111,7 @@ You MUST complete each phase before proceeding to the next.
 
    **WHEN error is deep in call stack:**
 
-   **REQUIRED SUB-SKILL:** Use wrangler:root-cause-tracing for backward tracing technique
+   **REQUIRED SUB-SKILL:** Use wrangler:tracing-root-causes for backward tracing technique
 
    **Quick version:**
    - Where does bad value originate?
@@ -176,8 +176,8 @@ You MUST complete each phase before proceeding to the next.
    - Automated test if possible
    - One-off test script if no framework
    - MUST have before fixing
-   - **REQUIRED SUB-SKILL:** Use wrangler:test-driven-development for writing proper failing tests
-   - **IMPORTANT:** Must provide TDD Compliance Certification (see test-driven-development skill) for the fix
+   - **REQUIRED SUB-SKILL:** Use wrangler:practicing-tdd for writing proper failing tests
+   - **IMPORTANT:** Must provide TDD Compliance Certification (see practicing-tdd skill) for the fix
 
 2. **Implement Single Fix**
    - Address the root cause identified
@@ -201,7 +201,7 @@ You MUST complete each phase before proceeding to the next.
 
    **Pattern indicating architectural problem:**
    - Each fix reveals new shared state/coupling/problem in different place
-   - Fixes require "massive refactoring" to implement
+   - Fixes require "massive refactoring" to implementing-features
    - Each fix creates new symptoms elsewhere
 
    **STOP and question fundamentals:**
@@ -403,13 +403,13 @@ If systematic investigation reveals issue is truly environmental, timing-depende
 ## Integration with Other Skills
 
 **This skill requires using:**
-- **root-cause-tracing** - REQUIRED when error is deep in call stack (see Phase 1, Step 5)
-- **test-driven-development** - REQUIRED for creating failing test case (see Phase 4, Step 1)
+- **tracing-root-causes** - REQUIRED when error is deep in call stack (see Phase 1, Step 5)
+- **practicing-tdd** - REQUIRED for creating failing test case (see Phase 4, Step 1)
 
 **Complementary skills:**
 - **defense-in-depth** - Add validation at multiple layers after finding root cause
 - **condition-based-waiting** - Replace arbitrary timeouts identified in Phase 2
-- **verification-before-completion** - Verify fix worked before claiming success
+- **verifying-before-completion** - Verify fix worked before claiming success
 
 ## Real-World Impact
 

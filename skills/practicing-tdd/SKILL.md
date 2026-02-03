@@ -161,7 +161,7 @@ Failure reason matches expectation: "retryOperation is not defined"
 Proceeding to GREEN phase.
 ```
 
-**Claims without evidence violate verification-before-completion.**
+**Claims without evidence violate verifying-before-completion.**
 
 If you cannot provide this output, you have NOT completed the RED phase.
 
@@ -243,7 +243,7 @@ Test now passes. Proceeding to REFACTOR phase.
 
 **If any errors/warnings appear**: Fix them before claiming GREEN phase complete.
 
-**Claims without evidence violate verification-before-completion.**
+**Claims without evidence violate verifying-before-completion.**
 
 If you cannot provide this output, you have NOT completed the GREEN phase.
 
@@ -344,7 +344,7 @@ Tests-first force edge case discovery before implementing. Tests-after verify yo
 
 ### "I'll just say it failed/passed"
 
-**Counter**: That's a claim without evidence. Violation of verification-before-completion. Show output.
+**Counter**: That's a claim without evidence. Violation of verifying-before-completion. Show output.
 
 ## Red Flags - STOP and Start Over
 
@@ -431,12 +431,12 @@ For each new function/method implemented:
 - One entry required for each new function/method.
 
 **Why this matters:**
-- Required by verification-before-completion skill
+- Required by verifying-before-completion skill
 - Proves you followed TDD (not just testing after)
 - Creates audit trail for code review
 - Makes rationalization harder (explicit lying vs fuzzy thinking)
 
-**Cross-reference:** See verification-before-completion skill for complete requirements.
+**Cross-reference:** See verifying-before-completion skill for complete requirements.
 
 ## Frontend-Specific TDD
 
@@ -524,19 +524,19 @@ No exceptions without your human partner's permission.
 
 ## Integration with Verification
 
-The evidence requirements in RED and GREEN phases integrate with verification-before-completion:
+The evidence requirements in RED and GREEN phases integrate with verifying-before-completion:
 
 - **RED phase evidence** → Proves you watched test fail
 - **GREEN phase evidence** → Proves tests now pass
 - **Both together** → Required for TDD Compliance Certification
 
-See verification-before-completion skill for complete certification requirements.
+See verifying-before-completion skill for complete certification requirements.
 
 ---
 
 ## Git Hooks Integration
 
-If the project has git hooks enabled (via wrangler's setup-git-hooks skill), they interact with TDD:
+If the project has git hooks enabled (via wrangler's setting-up-git-hooks skill), they interact with TDD:
 
 ### TDD with Git Hooks
 
@@ -568,7 +568,7 @@ WRANGLER_SKIP_HOOKS=1 git commit -m "WIP: failing test for feature X"
 # ...write implementation...
 
 # Now tests pass, normal commit works
-git commit -m "feat: implement feature X"
+git commit -m "feat: implementing-features feature X"
 # [pre-commit] OK: All checks passed
 ```
 

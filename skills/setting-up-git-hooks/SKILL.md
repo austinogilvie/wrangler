@@ -80,7 +80,7 @@ If the skill detects an empty project or no test framework:
    **Status:** No tests configured yet
    ```
 
-   If TESTING.md doesn't exist, create it from initialize-governance template first.
+   If TESTING.md doesn't exist, create it from initializing-governance template first.
 
 2. **Create stub hooks-config.json:**
    ```json
@@ -88,7 +88,7 @@ If the skill detects an empty project or no test framework:
      "version": "1.0.0",
      "createdAt": "2026-01-21T...",
      "testCommand": "",
-     "note": "No tests detected. Run /wrangler:update-git-hooks after adding tests.",
+     "note": "No tests detected. Run /wrangler:updating-git-hooks after adding tests.",
      "protectedBranches": ["main", "master", "feature/*", "fix/*"],
      "skipDocsOnlyChanges": true,
      "docsPatterns": ["*.md", "docs/**/*", ".wrangler/memos/**/*"],
@@ -110,7 +110,7 @@ If the skill detects an empty project or no test framework:
 
    Hooks are installed but will not enforce testing until you:
    1. Add tests to your project
-   2. Run: /wrangler:update-git-hooks
+   2. Run: /wrangler:updating-git-hooks
 
    Created:
    - .wrangler/TESTING.md (placeholder)
@@ -342,9 +342,9 @@ fi
 ```
 
 Use Read tool to read template files from wrangler skills directory:
-- `skills/setup-git-hooks/templates/pre-commit.template.sh`
-- `skills/setup-git-hooks/templates/pre-push.template.sh`
-- `skills/setup-git-hooks/templates/commit-msg.template.sh` (if enabled)
+- `skills/setting-up-git-hooks/templates/pre-commit.template.sh`
+- `skills/setting-up-git-hooks/templates/pre-push.template.sh`
+- `skills/setting-up-git-hooks/templates/commit-msg.template.sh` (if enabled)
 
 Use string replacement to substitute placeholders:
 - `{{TEST_COMMAND}}` -> user's test command
@@ -381,7 +381,7 @@ Use Write tool to save hooks to `.wrangler/config/git-hooks/`:
 - `.wrangler/config/git-hooks/commit-msg` (if enabled)
 
 Use Write tool to create install script at `scripts/install-hooks.sh`:
-(Copy from `skills/setup-git-hooks/templates/install-hooks.sh`)
+(Copy from `skills/setting-up-git-hooks/templates/install-hooks.sh`)
 
 Make files executable:
 ```bash
@@ -407,23 +407,23 @@ mkdir -p .github
 ```
 
 Create PR template (git hooks specific):
-- `.github/pull_request_template.md` (copy from `skills/setup-git-hooks/templates/pull_request_template.md`)
+- `.github/pull_request_template.md` (copy from `skills/setting-up-git-hooks/templates/pull_request_template.md`)
 
 **Note on other templates**: Security checklist and Definition of Done templates remain in their skill directories:
-- Security checklist: `skills/initialize-governance/templates/SECURITY_CHECKLIST.md`
-- Definition of Done: `skills/initialize-governance/templates/DEFINITION_OF_DONE.md`
+- Security checklist: `skills/initializing-governance/templates/SECURITY_CHECKLIST.md`
+- Definition of Done: `skills/initializing-governance/templates/DEFINITION_OF_DONE.md`
 
 These are referenced directly from skills, not copied to project directories.
 
 **Step 10: Populate TESTING.md**
 
-TESTING.md is created by initialize-governance skill. This step populates it with git hooks configuration.
+TESTING.md is created by initializing-governance skill. This step populates it with git hooks configuration.
 
-If `.wrangler/TESTING.md` doesn't exist (governance not initialized), create it from initialize-governance template with user's configuration:
+If `.wrangler/TESTING.md` doesn't exist (governance not initialized), create it from initializing-governance template with user's configuration:
 
 ```bash
-# Copy template from initialize-governance
-cp skills/initialize-governance/templates/TESTING.md .wrangler/TESTING.md
+# Copy template from initializing-governance
+cp skills/initializing-governance/templates/TESTING.md .wrangler/TESTING.md
 ```
 
 Then populate all placeholders with detected/configured values.
@@ -499,7 +499,7 @@ WRANGLER_SKIP_HOOKS=1 git commit -m "WIP: failing test for feature X"
 **Note**: AI agents cannot use this bypass - only humans can set environment variables.
 
 **Update Hooks**:
-Run `/wrangler:update-git-hooks` to modify configuration.
+Run `/wrangler:updating-git-hooks` to modify configuration.
 
 ### Next Steps
 
@@ -568,11 +568,11 @@ If pre-commit takes too long:
 
 ## Related Skills
 
-- **test-driven-development** - TDD workflow with hook considerations
-- **run-the-tests** - Manual test execution
-- **verification-before-completion** - Verification workflow
-- **update-git-hooks** - Modify existing hook configuration
-- **initialize-governance** - Sets up hooks as part of governance
+- **practicing-tdd** - TDD workflow with hook considerations
+- **running-tests** - Manual test execution
+- **verifying-before-completion** - Verification workflow
+- **updating-git-hooks** - Modify existing hook configuration
+- **initializing-governance** - Sets up hooks as part of governance
 
 ## TDD Workflow Integration
 
@@ -584,7 +584,7 @@ When following TDD (Test-Driven Development):
 
 2. **GREEN Phase**: Make test pass
    - Normal commit should now pass hooks
-   - `git commit -m "feat: implement feature to pass test"`
+   - `git commit -m "feat: implementing-features feature to pass test"`
 
 3. **REFACTOR Phase**: Improve code
    - All commits should pass hooks

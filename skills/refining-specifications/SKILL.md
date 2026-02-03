@@ -168,5 +168,5 @@ A good refinement session:
 ## Related Skills
 
 - `writing-specifications` - Create specifications (use before refinement)
-- `validating-roadmap` - Check consistency across multiple specs (use for projects with many specs)
+- `validating-roadmaps` - Check consistency across multiple specs (use for projects with many specs)
 - `writing-plans` - Create implementation plans (use after refinement)

@@ -21,7 +21,7 @@ This is a **workflow skill** - it coordinates multiple subagents in parallel for
 
 **1.1 Refresh Governance Metrics**
 
-Use the `refresh-metrics` skill (invoke with Skill tool) to update:
+Use the `refreshing-metrics` skill (invoke with Skill tool) to update:
 
 - `.wrangler/issues/README.md` - Issue counts and status percentages
 - `.wrangler/specifications/README.md` - Spec counts and constitutional compliance
@@ -235,7 +235,7 @@ Launch **five parallel subagents** using the Task tool:
 
 Execute governance refresh yourself:
 
-1. Invoke `refresh-metrics` skill using Skill tool
+1. Invoke `refreshing-metrics` skill using Skill tool
 2. Manually update Next Steps with recent completions
 3. Check for specs missing constitutional alignment
 

@@ -238,7 +238,7 @@ Set `compliant: false` when:
 
 ## Related Skills
 
-- `code-review` - Comprehensive review framework (use for completed work)
+- `reviewing-code` - Comprehensive review framework (use for completed work)
 - `executing-plans` - Execute plans in batches (integrate reviews between batches)
-- `systematic-debugging` - Debug issues found in review
-- `testing-anti-patterns` - Avoid common testing mistakes
+- `debugging-systematically` - Debug issues found in review
+- `avoiding-testing-anti-patterns` - Avoid common testing mistakes

@@ -32,7 +32,7 @@ Use this skill when the user:
 
 **DO NOT use for**:
 - Detailed feature requests (use `writing-specifications` skill)
-- Bugs or issues (use `create-new-issue` skill)
+- Bugs or issues (use `creating-issues` skill)
 - Concrete implementation tasks (use `writing-plans` skill)
 - Ideas that are already refined into specs
 

@@ -374,7 +374,7 @@ Apply this fix? [y/n]: _
 
 ```
 No changes made. Verification report saved for reference.
-Run /wrangler:verify-governance again when ready to fix drift.
+Run /wrangler:verifying-governance again when ready to fix drift.
 ```
 
 ### Phase 8: Re-Verify
@@ -424,7 +424,7 @@ ERROR: workspace-schema.json not found at .wrangler/config/workspace-schema.json
 This project may not have wrangler v1.2+ initialized.
 
 Options:
-1. Run /wrangler:initialize-governance to set up governance
+1. Run /wrangler:initializing-governance to set up governance
 2. Manually create .wrangler/config/workspace-schema.json from template
 3. Update wrangler to latest version
 ```
@@ -481,8 +481,8 @@ Always provide:
 
 ## Related Skills
 
-- **initialize-governance** - For creating governance files from scratch
-- **refresh-metrics** - For updating metrics in README files (content, not structure)
+- **initializing-governance** - For creating governance files from scratch
+- **refreshing-metrics** - For updating metrics in README files (content, not structure)
 
 ## Design Principles
 

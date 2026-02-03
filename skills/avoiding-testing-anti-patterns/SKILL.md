@@ -1,5 +1,5 @@
 ---
-name: avoiding-testing-anti-patterns
+name: avoiding-avoiding-testing-anti-patterns
 description: Use when writing or changing tests, adding mocks, or tempted to add test-only methods to production code - prevents testing mock behavior, production pollution with test-only methods, and mocking without understanding dependencies
 ---
 
@@ -814,8 +814,8 @@ test('shows empty state when no data', async () => { /* ... */ });
 ## Integration with Other Skills
 
 **Related skills:**
-- test-driven-development: Write tests covering all states BEFORE implementing
-- verification-before-completion: Verify accessibility and all states tested
+- practicing-tdd: Write tests covering all states BEFORE implementing
+- verifying-before-completion: Verify accessibility and all states tested
 - frontend-visual-regression-testing: Use for visual appearance testing
 - frontend-accessibility-verification: Use for comprehensive a11y testing
 - frontend-component-testing: Test components in isolation with all states

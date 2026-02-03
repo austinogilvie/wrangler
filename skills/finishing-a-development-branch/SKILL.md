@@ -40,7 +40,7 @@ go test ./...
 
 #### 1.2: Requirements Met
 
-Check verification-before-completion requirements checklist:
+Check verifying-before-completion requirements checklist:
 
 - [ ] All planned features implemented
 - [ ] All edge cases handled
@@ -52,7 +52,7 @@ Check verification-before-completion requirements checklist:
 
 #### 1.3: Code Review Obtained (MANDATORY)
 
-Check verification-before-completion code review gate:
+Check verifying-before-completion code review gate:
 
 - [ ] Code review completed (or valid exception 1, 2, or 3 documented)
 - [ ] Critical issues: 0 (MUST be zero)
@@ -70,7 +70,7 @@ Check verification-before-completion code review gate:
 
 #### 1.4: TDD Compliance
 
-Check verification-before-completion TDD certification:
+Check verifying-before-completion TDD certification:
 
 - [ ] TDD compliance certification completed
 - [ ] All new functions have tests written first
@@ -281,12 +281,12 @@ THEN:
 - Complete ALL verification steps
 - This is not optional
 
-Proceeding without complete Step 1 verification violates verification-before-completion.
+Proceeding without complete Step 1 verification violates verifying-before-completion.
 
 ## Integration
 
 **Called by:**
-- **implement** - After all tasks complete and final verification passes
+- **implementing-features** - After all tasks complete and final verification passes
 
 **Pairs with:**
 - **using-git-worktrees** - Cleans up worktree if one was created (optional)

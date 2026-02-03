@@ -480,10 +480,10 @@ test('modal is accessible', async ({ page }) => {
 ## Integration with Other Skills
 
 **Combines with:**
-- test-driven-development: Write a11y tests BEFORE implementing UI
-- verification-before-completion: Accessibility verification required before completion
+- practicing-tdd: Write a11y tests BEFORE implementing UI
+- verifying-before-completion: Accessibility verification required before completion
 - frontend-visual-regression-testing: Run AFTER visual verification
-- code-review: Reviewers verify a11y tests exist and pass
+- reviewing-code: Reviewers verify a11y tests exist and pass
 
 ## Common Rationalizations
 
