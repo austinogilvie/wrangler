@@ -517,19 +517,106 @@ Verify all acceptance criteria met using intelligent extraction (not brittle scr
 - Test results (all passing or failures documented)
 - Git status (clean or uncommitted changes documented)
 
-### Quality Gate
+### Quality Gate & Self-Healing
 
-**CRITICAL:** 100% compliance required to proceed.
+**Goal**: Achieve >= 95% compliance through autonomous remediation.
 
-**Blockers:** If compliance < 100%:
-1. Log unmet criteria and evidence gaps
-2. Inform user of verification failure
-3. Session remains in "paused" state
-4. User must address gaps or approve exceptions
+**Self-Healing Workflow**:
+
+1. **Initial Compliance Audit**
+   - Run compliance check
+   - Calculate compliance percentage
+   - Categorize gaps
+
+2. **Gap Categorization**
+
+   For each unmet acceptance criterion, classify:
+
+   - **AUTO_FIX_TEST**: Missing test coverage
+   - **AUTO_FIX_DOC**: Missing documentation
+   - **AUTO_FIX_EDGE**: Missing edge case handling
+   - **SEARCH_RETRY**: Evidence likely exists but not found
+   - **FUNDAMENTAL_GAP**: Core requirement not implemented (planning failure)
+
+3. **Autonomous Remediation** (max 3 iterations)
+
+   For AUTO_FIX_* gaps:
+   - Create supplemental MCP issue with specific requirement
+   - Execute using implement skill
+   - Commit changes
+   - Re-run compliance audit
+   - Loop until compliance >= 95% OR 3 iterations reached OR no more auto-fixable gaps
+
+   Log each remediation iteration:
+   ```
+   session_phase(
+     sessionId: SESSION_ID,
+     phase: "verify-remediation",
+     status: "started",
+     metadata: {
+       iteration: N,
+       gaps_to_fix: GAP_COUNT,
+       gap_types: ["AUTO_FIX_TEST", ...]
+     }
+   )
+   ```
+
+4. **Quality Gate Decision**
+
+   | Compliance | Behavior |
+   |-----------|----------|
+   | **>= 95%** | ✅ PASS → Document any gaps-fixed in PR, proceed to PUBLISH |
+   | **90-94%** | ⚠️ PASS WITH WARNINGS → Document minor gaps in PR, proceed to PUBLISH |
+   | **< 90%** | ❌ FAIL → Escalate to user with detailed gap analysis |
+
+5. **Escalation Format** (if < 90%)
+
+   ```markdown
+   VERIFY Phase: Compliance Below Threshold
+
+   Current compliance: X%
+   Quality gate: 90% required
+
+   Self-healing attempted:
+   - Created and executed Y supplemental tasks
+   - Fixed Z auto-fixable gaps
+   - Remaining gaps: W
+
+   Gap Analysis:
+   - FUNDAMENTAL_GAP: [list core requirements not implemented]
+   - SEARCH_RETRY failures: [list evidence not found after retries]
+
+   Options:
+   1. Review and approve current implementation (partial delivery)
+   2. Let me create additional tasks for remaining gaps
+   3. Abort session and revisit planning
+
+   Your decision?
+   ```
+
+6. **Document self-healing in PR** (if any remediation occurred)
+
+   Append to PR body:
+
+   ```markdown
+   ### Compliance Self-Healing
+
+   During verification, the following gaps were auto-fixed:
+   - Created ISS-XXXXX: Added missing test for feature X
+   - Created ISS-XXXXX: Added documentation for API Y
+   - Created ISS-XXXXX: Added edge case handling for Z
+
+   Final compliance: 96%
+   ```
+
+**Critical Rules**:
+- NEVER escalate for missing tests/docs/edge cases - auto-fix them
+- ONLY escalate for fundamental requirement gaps or after self-healing exhaustion
+- Document all self-healing activity in PR description
 
 **Also block if:**
-- `TEST_EXIT_CODE != 0` - tests failing
-- `GIT_CLEAN == false` - uncommitted changes
+- `TEST_EXIT_CODE != 0` - tests failing (cannot proceed)
+- `GIT_CLEAN == false` - uncommitted changes (cannot proceed)
 
 ---
 
@@ -701,11 +788,14 @@ Complete session tracking and present summary to user.
 | PLAN | Issues created | Yes |
 | REVIEW | AC coverage >= 95% | Advisory |
 | EXECUTE | All tasks complete | Yes |
-| VERIFY | 100% compliance | Yes |
+| VERIFY | >= 90% compliance (after self-healing) | Yes |
 | VERIFY | All tests passing | Yes |
 | PUBLISH | PR ready | Yes |
 
-**VERIFY phase is mandatory.** You cannot skip from EXECUTE to PUBLISH.
+**VERIFY phase is mandatory** and includes autonomous self-healing:
+- Auto-fixes missing tests, docs, edge cases (up to 3 iterations)
+- Only escalates for fundamental gaps or < 90% compliance after remediation
+- You cannot skip from EXECUTE to PUBLISH
 
 ---
 
