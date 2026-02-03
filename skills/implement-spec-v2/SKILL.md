@@ -1,3 +1,8 @@
+---
+name: implement-spec-v2
+description: GitHub-centric specification implementation orchestrating writing-plans and implement skills
+---
+
 # implement-spec-v2: Modular Specification Implementation
 
 ## Purpose
