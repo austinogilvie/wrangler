@@ -1,5 +1,5 @@
 ---
-name: wrangler:implement
+name: wrangler:implementing-features
 description: Autonomously implement tasks from specs, plans, or issues using subagents with TDD and code review
 ---
 
