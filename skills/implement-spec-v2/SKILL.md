@@ -30,9 +30,10 @@ This skill orchestrates existing wrangler skills rather than reimplementing thei
 
 **Phase 1 (INIT)**: Uses `session_start` MCP tool (from implement-spec skill)
 **Phase 2 (PLAN)**: Invokes `writing-plans` skill to create MCP issues
-**Phase 3 (EXECUTE)**: Invokes `implement` skill for each issue
-**Phase 4 (VERIFY)**: LLM-based compliance audit
-**Phase 5 (PUBLISH)**: GitHub PR finalization
+**Phase 3 (REVIEW)**: Validates AC coverage before execution starts
+**Phase 4 (EXECUTE)**: Invokes `implement` skill for each issue
+**Phase 5 (VERIFY)**: LLM-based compliance audit with self-healing
+**Phase 6 (PUBLISH)**: GitHub PR finalization
 
 **Benefits of this approach:**
 - No duplicated planning logic (writing-plans is source of truth)
@@ -43,7 +44,7 @@ This skill orchestrates existing wrangler skills rather than reimplementing thei
 ## Workflow Phases
 
 ```
-INIT → PLAN → EXECUTE → VERIFY → PUBLISH → COMPLETE
+INIT → PLAN → REVIEW → EXECUTE → VERIFY → PUBLISH → COMPLETE
 ```
 
 ---
@@ -227,7 +228,112 @@ Planning succeeds and issues are created. If planning fails or returns blockers,
 
 ---
 
-## Phase 3: EXECUTE
+## Phase 3: REVIEW - Validate Planning Completeness
+
+Verify 1:1 mapping between plan tasks and spec acceptance criteria BEFORE execution starts.
+
+### Objective
+
+Catch planning gaps early before wasting time on execution.
+
+### Actions
+
+1. **Log phase start**
+   ```
+   session_phase(sessionId: SESSION_ID, phase: "review", status: "started")
+   ```
+
+2. **Read plan file coverage analysis** (if plan file was created)
+
+   Read `.wrangler/plans/YYYY-MM-DD-PLAN_<spec>.md` and extract:
+   - "Acceptance Criteria Coverage" section
+   - Coverage summary (% covered)
+   - List of AC with no implementing tasks
+
+3. **Validate coverage**
+
+   | Coverage | Status |
+   |----------|--------|
+   | >= 95% | ✅ PASS (automatic approval) |
+   | < 95% | ⚠️ NEEDS ATTENTION (user decision) |
+
+4. **If coverage < 95%:**
+
+   Present coverage report to user:
+
+   ```markdown
+   REVIEW Phase: Planning Coverage Gap Detected
+
+   Coverage: X% (Y/Z acceptance criteria covered)
+
+   Missing AC:
+   - AC-XXX: [description]
+   - AC-YYY: [description]
+   ...
+
+   Options:
+   a) Auto-create missing tasks (Recommended)
+   b) Proceed anyway (risks VERIFY failure)
+   c) Abort and replan from scratch
+
+   Your decision?
+   ```
+
+5. **If auto-create chosen:**
+
+   For each uncovered AC:
+   - Create MCP issue with implementation details
+   - Add `satisfiesAcceptanceCriteria: ["AC-XXX"]` metadata
+   - Add to ISSUE_IDS list
+
+   Update plan file with new tasks and re-calculate coverage.
+
+6. **Update session checkpoint**
+   ```
+   session_checkpoint(
+     sessionId: SESSION_ID,
+     tasksCompleted: [],
+     tasksPending: ISSUE_IDS, // updated list
+     lastAction: "REVIEW phase complete, coverage: X%",
+     resumeInstructions: "Continue with execute phase"
+   )
+   ```
+
+7. **Log phase complete**
+   ```
+   session_phase(
+     sessionId: SESSION_ID,
+     phase: "review",
+     status: "complete",
+     metadata: {
+       coverage_percentage: X,
+       supplemental_tasks_created: N
+     }
+   )
+   ```
+
+### Outputs
+
+- Validated plan with >= 95% AC coverage (or user approval to proceed)
+- Updated ISSUE_IDS list (if supplemental tasks created)
+- Session checkpoint with review results
+
+### Quality Gate
+
+**Advisory gate** - offers to fix gaps, doesn't block arbitrarily:
+- Coverage >= 95%: Automatic PASS → EXECUTE
+- Coverage < 95%: User decision required → EXECUTE or ABORT
+
+### Skip Condition
+
+If spec has no explicit acceptance criteria section:
+- Skip REVIEW phase
+- Proceed directly to EXECUTE
+- Log warning: "Skipping REVIEW (no AC in spec)"
+
+---
+
+## Phase 4: EXECUTE
 
 Implement all tasks using implement skill.
 
@@ -327,7 +433,7 @@ We simply invoke it with our session context and let it do its job.
 
 ---
 
-## Phase 4: VERIFY
+## Phase 5: VERIFY
 
 Run compliance audit using LLM-based verification.
 
@@ -427,7 +533,7 @@ Verify all acceptance criteria met using intelligent extraction (not brittle scr
 
 ---
 
-## Phase 5: PUBLISH
+## Phase 6: PUBLISH
 
 Finalize PR and mark ready for review.
 
@@ -525,7 +631,7 @@ PR ready for merge after review approval.
 
 ---
 
-## Phase 6: COMPLETE
+## Phase 7: COMPLETE
 
 Finalize session and present summary.
 
@@ -593,6 +699,7 @@ Complete session tracking and present summary to user.
 |-------|------|----------|
 | INIT | Worktree created | Yes |
 | PLAN | Issues created | Yes |
+| REVIEW | AC coverage >= 95% | Advisory |
 | EXECUTE | All tasks complete | Yes |
 | VERIFY | 100% compliance | Yes |
 | VERIFY | All tests passing | Yes |
