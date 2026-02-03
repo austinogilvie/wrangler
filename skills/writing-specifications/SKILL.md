@@ -332,7 +332,16 @@ issues_create({
 - Performance: p95 latency < 500ms maintained for 30 days
 - Security: Zero successful unauthorized access attempts
 
+
+
+## Workflow Checklist
+
+Copy this checklist to track your progress:
+
+See `assets/workflow-checklist.md` for the complete checklist.
+
 ## References
+
 
 ### Related Specifications
 

@@ -418,3 +418,10 @@ From debugging sessions:
 - Random fixes approach: 2-3 hours of thrashing
 - First-time fix rate: 95% vs 40%
 - New bugs introduced: Near zero vs common
+
+
+## Workflow Checklist
+
+Copy this checklist to track your progress:
+
+See `assets/workflow-checklist.md` for the complete checklist.

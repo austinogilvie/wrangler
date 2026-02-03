@@ -1,7 +1,6 @@
 ---
 name: reporting-status
 description: Generate situational awareness report showing new memos, recent commits, decisions, questions, and roadmap work since user's last reporting-status. Use when user asks "what's new", "catch me up", "status update", "what did I miss", or "recent activity". ONLY invoke via /wrangler:reporting-status command.
-allowed-tools: ["Read", "Glob", "Grep", "Bash", "Task", "Write"]
 ---
 
 You are the reporting-status workflow coordinator. Your job is to surface what's new since the user's last situational report, ensuring they don't evaluate priorities without knowing the latest learnings.
