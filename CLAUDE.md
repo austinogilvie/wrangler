@@ -250,7 +250,7 @@ Wrangler implements a three-tier governance hierarchy to ensure consistency acro
 
 **Integration**:
 - Referenced in CLAUDE.md as mandatory reading
-- Checked via `wrangler:check-constitutional-alignment` skill
+- Checked via `wrangler:checking-constitutional-alignment` skill
 - Informs roadmap planning and issue creation
 
 ### Tier 2: Strategic Roadmap
@@ -295,7 +295,7 @@ Each governance directory (`issues/`, `specifications/`) contains:
 
 **Templates**: Generated via skills, not embedded in README
 
-**Validation**: Automated via `wrangler:verify-governance` skill
+**Validation**: Automated via `wrangler:verifying-governance` skill
 
 ### Governance Workflow
 
@@ -321,7 +321,7 @@ Update NEXT_STEPS (Track progress)
 
 ### Initialization
 
-Run `/wrangler:initialize-governance` to create:
+Run `/wrangler:initializing-governance` to create:
 - `.wrangler/CONSTITUTION.md` (template)
 - `.wrangler/ROADMAP.md` (template)
 - `.wrangler/ROADMAP_NEXT_STEPS.md` (template)
@@ -339,8 +339,8 @@ Run `/wrangler:initialize-governance` to create:
 - Metric staleness
 
 **Manual commands**:
-- `/wrangler:verify-governance` - Detailed validation report
-- `/wrangler:refresh-metrics` - Update status counts
+- `/wrangler:verifying-governance` - Detailed validation report
+- `/wrangler:refreshing-metrics` - Update status counts
 - `/wrangler:check-alignment` - Constitutional alignment check
 
 ### Best Practices
@@ -452,12 +452,12 @@ The Git Hooks Enforcement Framework provides automated testing and code quality 
 - `commit-msg` - Validates commit message format (optional)
 
 **2 Skills:**
-- `setup-git-hooks` - Interactive hook configuration and installation
-- `update-git-hooks` - Update existing hook configuration
+- `setting-up-git-hooks` - Interactive hook configuration and installation
+- `updating-git-hooks` - Update existing hook configuration
 
 **2 Slash Commands:**
-- `/wrangler:setup-git-hooks` - Set up git hooks
-- `/wrangler:update-git-hooks` - Update hook configuration
+- `/wrangler:setting-up-git-hooks` - Set up git hooks
+- `/wrangler:updating-git-hooks` - Update hook configuration
 
 ### Installation Patterns
 
@@ -475,7 +475,7 @@ The Git Hooks Enforcement Framework provides automated testing and code quality 
 
 ```bash
 # Run setup command
-/wrangler:setup-git-hooks
+/wrangler:setting-up-git-hooks
 
 # Follow interactive prompts
 
@@ -823,8 +823,8 @@ skills/{category}/{skill-name}/
 - ✅ `writing-skills` (gerund)
 - ✅ `practicing-tdd` (gerund)
 - ✅ `reviewing-code` (gerund)
-- ❌ `test-driven-development` (noun phrase)
-- ❌ `code-review` (noun)
+- ❌ `practicing-tdd` (noun phrase)
+- ❌ `reviewing-code` (noun)
 - ❌ `create-issue` (imperative verb)
 
 **Requirements**:

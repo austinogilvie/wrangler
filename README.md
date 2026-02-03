@@ -17,16 +17,16 @@ Issue and specification tracking using markdown files with YAML frontmatter. Sto
 12 commands that activate skills:
 - `/wrangler:brainstorm` - Design refinement
 - `/wrangler:write-plan` - Implementation planning
-- `/wrangler:implement` - Autonomous execution
+- `/wrangler:implementing-features` - Autonomous execution
 - `/wrangler:run-tests` - Test execution
-- `/wrangler:update-yourself` - Version migration
-- `/wrangler:setup-git-hooks` - Git hooks configuration
-- `/wrangler:update-git-hooks` - Update hooks configuration
+- `/wrangler:updating-wrangler` - Version migration
+- `/wrangler:setting-up-git-hooks` - Git hooks configuration
+- `/wrangler:updating-git-hooks` - Update hooks configuration
 - `/wrangler:commit-push-pr` - Commit, push, and create PR
 - `/wrangler:generate-plan-for-spec` - Generate plan from specification
 - `/wrangler:help` - Wrangler help and documentation
 - `/wrangler:issues` - Issue status summary
-- `/wrangler:sitrep` - Situational awareness report
+- `/wrangler:reporting-status` - Situational awareness report
 
 ### Git Hooks Enforcement
 
@@ -35,7 +35,7 @@ Automated testing and code quality enforcement through Git hooks:
 - **Pre-push**: Runs full test suite before pushing to protected branches
 - **Commit-msg**: Validates commit message format (optional)
 
-Run `/wrangler:setup-git-hooks` to configure. See [docs/git-hooks.md](docs/git-hooks.md) for details.
+Run `/wrangler:setting-up-git-hooks` to configure. See [docs/git-hooks.md](docs/git-hooks.md) for details.
 
 ### Session Hooks
 
