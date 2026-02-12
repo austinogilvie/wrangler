@@ -842,3 +842,79 @@ describe('WorkflowContext - getChangedFiles() immutability', () => {
     expect(ctx.getChangedFiles()).toEqual(['src/a.ts']);
   });
 });
+
+// ================================================================
+// Per-task context isolation (unit-level)
+// ================================================================
+
+describe('WorkflowContext - per-task context isolation', () => {
+  it('child context mutations do not affect sibling child contexts', () => {
+    const parent = new WorkflowContext({ shared: 'value' });
+
+    const taskA = makeTask({ id: 'task-a', title: 'A' });
+    const taskB = makeTask({ id: 'task-b', title: 'B' });
+
+    const childA = parent.withTask(taskA);
+    childA.set('secretA', 'only-for-a');
+
+    const childB = parent.withTask(taskB);
+
+    // childB should NOT see secretA (it was created before mergeTaskResults)
+    expect(childB.get('secretA')).toBeUndefined();
+  });
+
+  it('child sees parent variables but parent does not see child-only variables before merge', () => {
+    const parent = new WorkflowContext({ parentVar: 'visible' });
+    const child = parent.withTask(makeTask());
+    child.set('childOnly', 'hidden-from-parent');
+
+    expect(child.get('parentVar')).toBe('visible');
+    expect(parent.get('childOnly')).toBeUndefined();
+  });
+
+  it('mergeTaskResults propagates new child variables to parent', () => {
+    const parent = new WorkflowContext({ existing: 'keep' });
+    const child = parent.withTask(makeTask());
+    child.set('newOutput', 'from-child');
+
+    parent.mergeTaskResults(child);
+
+    expect(parent.get('newOutput')).toBe('from-child');
+    expect(parent.get('existing')).toBe('keep');
+  });
+
+  it('mergeTaskResults does not overwrite existing parent variables', () => {
+    const parent = new WorkflowContext({ shared: 'parent-version' });
+    const child = parent.withTask(makeTask());
+    child.set('shared', 'child-version');
+
+    parent.mergeTaskResults(child);
+
+    // Parent's value should be preserved
+    expect(parent.get('shared')).toBe('parent-version');
+  });
+
+  it('after mergeTaskResults, next child context sees merged variables', () => {
+    const parent = new WorkflowContext();
+
+    const childA = parent.withTask(makeTask({ id: 'a' }));
+    childA.set('resultA', 'done');
+    parent.mergeTaskResults(childA);
+
+    const childB = parent.withTask(makeTask({ id: 'b' }));
+    // childB inherits from parent which now has resultA
+    expect(childB.get('resultA')).toBe('done');
+  });
+
+  it('task variable is unique per child context', () => {
+    const parent = new WorkflowContext();
+    const taskA = makeTask({ id: 'a', title: 'Alpha' });
+    const taskB = makeTask({ id: 'b', title: 'Beta' });
+
+    const childA = parent.withTask(taskA);
+    const childB = parent.withTask(taskB);
+
+    expect((childA.get('task') as TaskDefinition).title).toBe('Alpha');
+    expect((childB.get('task') as TaskDefinition).title).toBe('Beta');
+  });
+});

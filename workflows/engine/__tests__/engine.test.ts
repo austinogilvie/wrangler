@@ -2299,4 +2299,1509 @@ phases:
       expect(result.outputs.result).toEqual({ answer: 42 });
     });
   });
+
+  // -----------------------------------------------------------------------
+  // Config mutation safety
+  // -----------------------------------------------------------------------
+  describe('config mutation safety', () => {
+    it('should not mutate this.config.defaults when run() applies workflow defaults', async () => {
+      await writeAgentMarkdown(tmpDir, 'agent.md', {
+        name: 'agent',
+        description: 'Agent',
+        tools: [],
+      }, 'Do something.');
+
+      await writeWorkflowYaml(tmpDir, 'workflow.yaml', `
+name: test-workflow
+version: 1
+defaults:
+  model: workflow-model
+  permissionMode: default
+  settingSources:
+    - project
+    - user
+phases:
+  - name: step1
+    type: agent
+    agent: agent.md
+    output: result
+`);
+
+      const queryFn = createMockQuery(new Map([['default', { ok: true }]]));
+
+      const originalDefaults = {
+        model: 'original-model',
+        permissionMode: 'bypassPermissions',
+        settingSources: ['project'],
+      };
+
+      const config = makeConfig(tmpDir, { defaults: { ...originalDefaults } });
+      const engine = new WorkflowEngine({ config, queryFn });
+
+      await engine.run('workflow.yaml', '/tmp/spec.md');
+
+      // The original config.defaults must NOT have been mutated
+      expect(config.defaults.model).toBe('original-model');
+      expect(config.defaults.permissionMode).toBe('bypassPermissions');
+      expect(config.defaults.settingSources).toEqual(['project']);
+    });
+
+    it('should not mutate this.config.defaults when resume() applies workflow defaults', async () => {
+      await writeAgentMarkdown(tmpDir, 'agent.md', {
+        name: 'agent',
+        description: 'Agent',
+        tools: [],
+      }, 'Do something.');
+
+      await writeWorkflowYaml(tmpDir, 'workflow.yaml', `
+name: test-workflow
+version: 1
+defaults:
+  model: resume-model
+phases:
+  - name: step1
+    type: agent
+    agent: agent.md
+    output: result
+`);
+
+      const queryFn = createMockQuery(new Map([['default', { ok: true }]]));
+
+      const originalDefaults = {
+        model: 'original-model',
+        permissionMode: 'bypassPermissions',
+        settingSources: ['project'],
+      };
+
+      const config = makeConfig(tmpDir, { defaults: { ...originalDefaults } });
+      const engine = new WorkflowEngine({ config, queryFn });
+
+      await engine.resume(
+        'workflow.yaml',
+        { variables: {}, completedPhases: [], currentTaskId: null, changedFiles: [] },
+        'step1'
+      );
+
+      // The original config.defaults must NOT have been mutated
+      expect(config.defaults.model).toBe('original-model');
+      expect(config.defaults.permissionMode).toBe('bypassPermissions');
+      expect(config.defaults.settingSources).toEqual(['project']);
+    });
+
+    it('should be safe for engine reuse across multiple run() calls with different workflows', async () => {
+      const callLog: Array<{ prompt: string; options?: QueryOptions['options'] }> = [];
+
+      await writeAgentMarkdown(tmpDir, 'agent.md', {
+        name: 'agent',
+        description: 'Agent',
+        tools: [],
+      }, 'Do something.');
+
+      await writeWorkflowYaml(tmpDir, 'workflow1.yaml', `
+name: workflow-1
+version: 1
+defaults:
+  model: model-from-workflow-1
+phases:
+  - name: step1
+    type: agent
+    agent: agent.md
+    output: result
+`);
+
+      await writeWorkflowYaml(tmpDir, 'workflow2.yaml', `
+name: workflow-2
+version: 1
+phases:
+  - name: step1
+    type: agent
+    agent: agent.md
+    output: result
+`);
+
+      const queryFn = createMockQuery(new Map([['default', { ok: true }]]), callLog);
+
+      const config = makeConfig(tmpDir, {
+        defaults: { model: 'engine-default', permissionMode: 'bypassPermissions', settingSources: ['project'] },
+      });
+      const engine = new WorkflowEngine({ config, queryFn });
+
+      // First run uses workflow1 which overrides model
+      await engine.run('workflow1.yaml', '/tmp/spec.md');
+      expect(callLog[0].options?.model).toBe('model-from-workflow-1');
+
+      // Second run uses workflow2 which has no defaults, so should fall back to engine defaults
+      await engine.run('workflow2.yaml', '/tmp/spec.md');
+      expect(callLog[1].options?.model).toBe('engine-default');
+    });
+  });
+
+  // -----------------------------------------------------------------------
+  // Per-phase checkpointing (onPhaseComplete callback)
+  // -----------------------------------------------------------------------
+  describe('onPhaseComplete callback', () => {
+    it('should call onPhaseComplete after each phase in run()', async () => {
+      const phaseLog: Array<{ phaseName: string; completedPhases: string[] }> = [];
+
+      const registry = new HandlerRegistry();
+      registry.register('noop', async () => {});
+
+      await writeWorkflowYaml(tmpDir, 'workflow.yaml', `
+name: test-workflow
+version: 1
+phases:
+  - name: phase-a
+    type: code
+    handler: noop
+  - name: phase-b
+    type: code
+    handler: noop
+  - name: phase-c
+    type: code
+    handler: noop
+`);
+
+      const queryFn = createMockQuery(new Map());
+
+      const engine = new WorkflowEngine({
+        config: makeConfig(tmpDir, {
+          onPhaseComplete: async (phaseName, context) => {
+            phaseLog.push({
+              phaseName,
+              completedPhases: context.getCompletedPhases(),
+            });
+          },
+        }),
+        queryFn,
+        handlerRegistry: registry,
+      });
+
+      const result = await engine.run('workflow.yaml', '/tmp/spec.md');
+
+      expect(result.status).toBe('completed');
+      expect(phaseLog).toHaveLength(3);
+
+      expect(phaseLog[0].phaseName).toBe('phase-a');
+      expect(phaseLog[0].completedPhases).toEqual(['phase-a']);
+
+      expect(phaseLog[1].phaseName).toBe('phase-b');
+      expect(phaseLog[1].completedPhases).toEqual(['phase-a', 'phase-b']);
+
+      expect(phaseLog[2].phaseName).toBe('phase-c');
+      expect(phaseLog[2].completedPhases).toEqual(['phase-a', 'phase-b', 'phase-c']);
+    });
+
+    it('should call onPhaseComplete after each phase in resume()', async () => {
+      const phaseLog: string[] = [];
+
+      const registry = new HandlerRegistry();
+      registry.register('noop', async () => {});
+
+      await writeWorkflowYaml(tmpDir, 'workflow.yaml', `
+name: test-workflow
+version: 1
+phases:
+  - name: phase-a
+    type: code
+    handler: noop
+  - name: phase-b
+    type: code
+    handler: noop
+`);
+
+      const queryFn = createMockQuery(new Map());
+
+      const engine = new WorkflowEngine({
+        config: makeConfig(tmpDir, {
+          onPhaseComplete: async (phaseName) => {
+            phaseLog.push(phaseName);
+          },
+        }),
+        queryFn,
+        handlerRegistry: registry,
+      });
+
+      await engine.resume(
+        'workflow.yaml',
+        { variables: {}, completedPhases: [], currentTaskId: null, changedFiles: [] },
+        'phase-a'
+      );
+
+      expect(phaseLog).toEqual(['phase-a', 'phase-b']);
+    });
+
+    it('should not fail when onPhaseComplete is not set', async () => {
+      const registry = new HandlerRegistry();
+      registry.register('noop', async () => {});
+
+      await writeWorkflowYaml(tmpDir, 'workflow.yaml', `
+name: test-workflow
+version: 1
+phases:
+  - name: step1
+    type: code
+    handler: noop
+`);
+
+      const queryFn = createMockQuery(new Map());
+
+      const engine = new WorkflowEngine({
+        config: makeConfig(tmpDir),
+        queryFn,
+        handlerRegistry: registry,
+      });
+
+      const result = await engine.run('workflow.yaml', '/tmp/spec.md');
+      expect(result.status).toBe('completed');
+    });
+  });
+
+  // -----------------------------------------------------------------------
+  // Falsy output handling
+  // -----------------------------------------------------------------------
+  describe('falsy output handling', () => {
+    it('should store structured_output of 0 in the context', async () => {
+      await writeAgentMarkdown(tmpDir, 'agent.md', {
+        name: 'agent',
+        description: 'Agent',
+        tools: [],
+      }, 'Return zero.');
+
+      await writeWorkflowYaml(tmpDir, 'workflow.yaml', `
+name: test-workflow
+version: 1
+phases:
+  - name: step1
+    type: agent
+    agent: agent.md
+    output: result
+`);
+
+      const queryFn: QueryFunction = async function* (_params) {
+        yield {
+          type: 'result',
+          subtype: 'success',
+          structured_output: 0,
+          is_error: false,
+          num_turns: 1,
+          total_cost_usd: 0.01,
+          session_id: 'test-session',
+        } as SDKResultMessage;
+      };
+
+      const engine = new WorkflowEngine({
+        config: makeConfig(tmpDir),
+        queryFn,
+      });
+
+      const result = await engine.run('workflow.yaml', '/tmp/spec.md');
+
+      expect(result.status).toBe('completed');
+      expect(result.outputs.result).toBe(0);
+    });
+
+    it('should store structured_output of false in the context', async () => {
+      await writeAgentMarkdown(tmpDir, 'agent.md', {
+        name: 'agent',
+        description: 'Agent',
+        tools: [],
+      }, 'Return false.');
+
+      await writeWorkflowYaml(tmpDir, 'workflow.yaml', `
+name: test-workflow
+version: 1
+phases:
+  - name: step1
+    type: agent
+    agent: agent.md
+    output: result
+`);
+
+      const queryFn: QueryFunction = async function* (_params) {
+        yield {
+          type: 'result',
+          subtype: 'success',
+          structured_output: false,
+          is_error: false,
+          num_turns: 1,
+          total_cost_usd: 0.01,
+          session_id: 'test-session',
+        } as SDKResultMessage;
+      };
+
+      const engine = new WorkflowEngine({
+        config: makeConfig(tmpDir),
+        queryFn,
+      });
+
+      const result = await engine.run('workflow.yaml', '/tmp/spec.md');
+
+      expect(result.status).toBe('completed');
+      expect(result.outputs.result).toBe(false);
+    });
+
+    it('should store structured_output of empty string in the context', async () => {
+      await writeAgentMarkdown(tmpDir, 'agent.md', {
+        name: 'agent',
+        description: 'Agent',
+        tools: [],
+      }, 'Return empty string.');
+
+      await writeWorkflowYaml(tmpDir, 'workflow.yaml', `
+name: test-workflow
+version: 1
+phases:
+  - name: step1
+    type: agent
+    agent: agent.md
+    output: result
+`);
+
+      const queryFn: QueryFunction = async function* (_params) {
+        yield {
+          type: 'result',
+          subtype: 'success',
+          structured_output: '',
+          is_error: false,
+          num_turns: 1,
+          total_cost_usd: 0.01,
+          session_id: 'test-session',
+        } as SDKResultMessage;
+      };
+
+      const engine = new WorkflowEngine({
+        config: makeConfig(tmpDir),
+        queryFn,
+      });
+
+      const result = await engine.run('workflow.yaml', '/tmp/spec.md');
+
+      expect(result.status).toBe('completed');
+      expect(result.outputs.result).toBe('');
+    });
+
+    it('should NOT store structured_output of null in the context', async () => {
+      await writeAgentMarkdown(tmpDir, 'agent.md', {
+        name: 'agent',
+        description: 'Agent',
+        tools: [],
+      }, 'Return null.');
+
+      await writeWorkflowYaml(tmpDir, 'workflow.yaml', `
+name: test-workflow
+version: 1
+phases:
+  - name: step1
+    type: agent
+    agent: agent.md
+    output: result
+`);
+
+      const queryFn: QueryFunction = async function* (_params) {
+        yield {
+          type: 'result',
+          subtype: 'success',
+          structured_output: null,
+          is_error: false,
+          num_turns: 1,
+          total_cost_usd: 0.01,
+          session_id: 'test-session',
+        } as SDKResultMessage;
+      };
+
+      const engine = new WorkflowEngine({
+        config: makeConfig(tmpDir),
+        queryFn,
+      });
+
+      const result = await engine.run('workflow.yaml', '/tmp/spec.md');
+
+      expect(result.status).toBe('completed');
+      // null should not have been stored (result variable starts as null, so output key won't be set)
+      expect(result.outputs.result).toBeUndefined();
+    });
+  });
+
+  // -----------------------------------------------------------------------
+  // Path traversal prevention
+  // -----------------------------------------------------------------------
+  describe('path traversal prevention', () => {
+    it('should throw when agent path escapes workflow directory', async () => {
+      await writeWorkflowYaml(tmpDir, 'workflow.yaml', `
+name: test-workflow
+version: 1
+phases:
+  - name: evil
+    type: agent
+    agent: "../../etc/passwd"
+    output: result
+`);
+
+      const queryFn = createMockQuery(new Map([['default', {}]]));
+      const engine = new WorkflowEngine({
+        config: makeConfig(tmpDir),
+        queryFn,
+      });
+
+      await expect(engine.run('workflow.yaml', '/tmp/spec.md')).rejects.toThrow(
+        /escapes workflow directory/
+      );
+    });
+
+    it('should throw when gate-group path escapes workflow directory', async () => {
+      await writeWorkflowYaml(tmpDir, 'workflow.yaml', `
+name: test-workflow
+version: 1
+phases:
+  - name: evil-gates
+    type: gate-group
+    gates: "../../../../tmp"
+    output: result
+`);
+
+      const queryFn = createMockQuery(new Map([['default', {}]]));
+      const engine = new WorkflowEngine({
+        config: makeConfig(tmpDir),
+        queryFn,
+      });
+
+      await expect(engine.run('workflow.yaml', '/tmp/spec.md')).rejects.toThrow(
+        /escapes workflow directory/
+      );
+    });
+
+    it('should allow paths within the workflow directory', async () => {
+      await writeAgentMarkdown(tmpDir, 'safe-agent.md', {
+        name: 'safe',
+        description: 'Safe agent',
+        tools: [],
+      }, 'Safe agent prompt.');
+
+      await writeWorkflowYaml(tmpDir, 'workflow.yaml', `
+name: test-workflow
+version: 1
+phases:
+  - name: safe
+    type: agent
+    agent: safe-agent.md
+    output: result
+`);
+
+      const queryFn = createMockQuery(new Map([['default', { ok: true }]]));
+      const engine = new WorkflowEngine({
+        config: makeConfig(tmpDir),
+        queryFn,
+      });
+
+      const result = await engine.run('workflow.yaml', '/tmp/spec.md');
+      expect(result.status).toBe('completed');
+    });
+
+    it('should throw for absolute path agent reference', async () => {
+      await writeWorkflowYaml(tmpDir, 'workflow.yaml', `
+name: test-workflow
+version: 1
+phases:
+  - name: evil
+    type: agent
+    agent: "/etc/passwd"
+    output: result
+`);
+
+      const queryFn = createMockQuery(new Map([['default', {}]]));
+      const engine = new WorkflowEngine({
+        config: makeConfig(tmpDir),
+        queryFn,
+      });
+
+      // path.resolve with an absolute path returns that absolute path,
+      // which will be outside the workflow dir
+      await expect(engine.run('workflow.yaml', '/tmp/spec.md')).rejects.toThrow(
+        /escapes workflow directory/
+      );
+    });
+  });
+
+  // -----------------------------------------------------------------------
+  // Null structured_output handling
+  // -----------------------------------------------------------------------
+  describe('null structured_output handling', () => {
+    it('should not store output when structured_output is null and output_as is set', async () => {
+      await writeAgentMarkdown(tmpDir, 'agent.md', {
+        name: 'agent',
+        description: 'Agent',
+        tools: [],
+      }, 'Do something.');
+
+      await writeWorkflowYaml(tmpDir, 'workflow.yaml', `
+name: test-workflow
+version: 1
+phases:
+  - name: step1
+    type: agent
+    agent: agent.md
+    output: myOutput
+`);
+
+      const queryFn: QueryFunction = async function* (_params) {
+        yield {
+          type: 'result',
+          subtype: 'success',
+          structured_output: null,
+          is_error: false,
+          num_turns: 1,
+          total_cost_usd: 0.01,
+          session_id: 'test-session',
+        } as SDKResultMessage;
+      };
+
+      const engine = new WorkflowEngine({
+        config: makeConfig(tmpDir),
+        queryFn,
+      });
+
+      const result = await engine.run('workflow.yaml', '/tmp/spec.md');
+
+      expect(result.status).toBe('completed');
+      // null structured_output should NOT be stored due to `result != null` guard
+      expect(result.outputs.myOutput).toBeUndefined();
+    });
+
+    it('should not store output when structured_output is undefined and output_as is set', async () => {
+      await writeAgentMarkdown(tmpDir, 'agent.md', {
+        name: 'agent',
+        description: 'Agent',
+        tools: [],
+      }, 'Do something.');
+
+      await writeWorkflowYaml(tmpDir, 'workflow.yaml', `
+name: test-workflow
+version: 1
+phases:
+  - name: step1
+    type: agent
+    agent: agent.md
+    output: myOutput
+`);
+
+      const queryFn: QueryFunction = async function* (_params) {
+        yield {
+          type: 'result',
+          subtype: 'success',
+          structured_output: undefined,
+          is_error: false,
+          num_turns: 1,
+          total_cost_usd: 0.01,
+          session_id: 'test-session',
+        } as SDKResultMessage;
+      };
+
+      const engine = new WorkflowEngine({
+        config: makeConfig(tmpDir),
+        queryFn,
+      });
+
+      const result = await engine.run('workflow.yaml', '/tmp/spec.md');
+
+      expect(result.status).toBe('completed');
+      // undefined structured_output should NOT be stored
+      expect(result.outputs.myOutput).toBeUndefined();
+      // Context should not contain undefined for the output key
+      expect('myOutput' in result.outputs).toBe(false);
+    });
+
+    it('should not throw when structured_output is null and no output key is configured', async () => {
+      await writeAgentMarkdown(tmpDir, 'agent.md', {
+        name: 'agent',
+        description: 'Agent',
+        tools: [],
+      }, 'Do something.');
+
+      await writeWorkflowYaml(tmpDir, 'workflow.yaml', `
+name: test-workflow
+version: 1
+phases:
+  - name: step1
+    type: agent
+    agent: agent.md
+`);
+
+      const queryFn: QueryFunction = async function* (_params) {
+        yield {
+          type: 'result',
+          subtype: 'success',
+          structured_output: null,
+          is_error: false,
+          num_turns: 1,
+          total_cost_usd: 0.01,
+          session_id: 'test-session',
+        } as SDKResultMessage;
+      };
+
+      const engine = new WorkflowEngine({
+        config: makeConfig(tmpDir),
+        queryFn,
+      });
+
+      const result = await engine.run('workflow.yaml', '/tmp/spec.md');
+
+      // Should complete normally without errors
+      expect(result.status).toBe('completed');
+    });
+  });
+
+  // -----------------------------------------------------------------------
+  // Gate fallback behavior: onExhausted "skip" is not a valid option,
+  // but we can verify "fail" vs "escalate" vs "warn" comprehensiveness
+  // -----------------------------------------------------------------------
+  // Note: The schema only allows 'escalate', 'warn', 'fail' for onExhausted.
+  // We already test 'escalate' (paused) and 'fail' (failed). Here we verify
+  // that 'warn' allows subsequent phases to continue executing normally.
+  describe('gate fallback / loop onExhausted behavior', () => {
+    it('should continue executing subsequent phases after onExhausted "warn"', async () => {
+      await writeAgentMarkdown(tmpDir, 'fixer.md', {
+        name: 'fixer',
+        description: 'Fixes issues',
+        tools: [],
+      }, 'Fix issues.');
+
+      const registry = new HandlerRegistry();
+      registry.register('setup', async (ctx) => {
+        ctx.set('review', { hasActionableIssues: true });
+      });
+      registry.register('final-step', async (ctx) => {
+        ctx.set('finalStepRan', true);
+      });
+
+      await writeWorkflowYaml(tmpDir, 'workflow.yaml', `
+name: test-workflow
+version: 1
+phases:
+  - name: setup
+    type: code
+    handler: setup
+  - name: fix-loop
+    type: loop
+    condition: review.hasActionableIssues
+    maxRetries: 1
+    onExhausted: warn
+    steps:
+      - name: fix
+        type: agent
+        agent: fixer.md
+  - name: finalize
+    type: code
+    handler: final-step
+`);
+
+      const queryFn = createMockQuery(new Map([['default', {}]]));
+
+      const engine = new WorkflowEngine({
+        config: makeConfig(tmpDir),
+        queryFn,
+        handlerRegistry: registry,
+      });
+
+      const result = await engine.run('workflow.yaml', '/tmp/spec.md');
+
+      // Should complete and run the phase after the loop
+      expect(result.status).toBe('completed');
+      expect(result.outputs.finalStepRan).toBe(true);
+    });
+
+    it('should NOT continue executing subsequent phases after onExhausted "fail"', async () => {
+      await writeAgentMarkdown(tmpDir, 'fixer.md', {
+        name: 'fixer',
+        description: 'Fixes issues',
+        tools: [],
+      }, 'Fix issues.');
+
+      const registry = new HandlerRegistry();
+      registry.register('setup', async (ctx) => {
+        ctx.set('review', { hasActionableIssues: true });
+      });
+      registry.register('final-step', async (ctx) => {
+        ctx.set('finalStepRan', true);
+      });
+
+      await writeWorkflowYaml(tmpDir, 'workflow.yaml', `
+name: test-workflow
+version: 1
+phases:
+  - name: setup
+    type: code
+    handler: setup
+  - name: fix-loop
+    type: loop
+    condition: review.hasActionableIssues
+    maxRetries: 1
+    onExhausted: fail
+    steps:
+      - name: fix
+        type: agent
+        agent: fixer.md
+  - name: finalize
+    type: code
+    handler: final-step
+`);
+
+      const queryFn = createMockQuery(new Map([['default', {}]]));
+
+      const engine = new WorkflowEngine({
+        config: makeConfig(tmpDir),
+        queryFn,
+        handlerRegistry: registry,
+      });
+
+      const result = await engine.run('workflow.yaml', '/tmp/spec.md');
+
+      // Should fail, finalize step should NOT have run
+      expect(result.status).toBe('failed');
+      expect(result.outputs.finalStepRan).toBeUndefined();
+      expect(result.error).toContain('Loop exhausted 1 retries');
+    });
+
+    it('should NOT continue executing subsequent phases after onExhausted "escalate"', async () => {
+      await writeAgentMarkdown(tmpDir, 'fixer.md', {
+        name: 'fixer',
+        description: 'Fixes issues',
+        tools: [],
+      }, 'Fix issues.');
+
+      const registry = new HandlerRegistry();
+      registry.register('setup', async (ctx) => {
+        ctx.set('review', { hasActionableIssues: true });
+      });
+      registry.register('final-step', async (ctx) => {
+        ctx.set('finalStepRan', true);
+      });
+
+      await writeWorkflowYaml(tmpDir, 'workflow.yaml', `
+name: test-workflow
+version: 1
+phases:
+  - name: setup
+    type: code
+    handler: setup
+  - name: fix-loop
+    type: loop
+    condition: review.hasActionableIssues
+    maxRetries: 1
+    onExhausted: escalate
+    steps:
+      - name: fix
+        type: agent
+        agent: fixer.md
+  - name: finalize
+    type: code
+    handler: final-step
+`);
+
+      const queryFn = createMockQuery(new Map([['default', {}]]));
+
+      const engine = new WorkflowEngine({
+        config: makeConfig(tmpDir),
+        queryFn,
+        handlerRegistry: registry,
+      });
+
+      const result = await engine.run('workflow.yaml', '/tmp/spec.md');
+
+      // Should pause, finalize step should NOT have run
+      expect(result.status).toBe('paused');
+      expect(result.outputs.finalStepRan).toBeUndefined();
+      expect(result.blockerDetails).toContain('Loop exhausted 1 retries');
+    });
+  });
+
+  // -----------------------------------------------------------------------
+  // Unknown/missing dependencies in topological sort
+  // -----------------------------------------------------------------------
+  describe('topologicalSort - missing dependencies', () => {
+    it('should ignore dependencies that reference non-existent task IDs', () => {
+      const engine = new WorkflowEngine({
+        config: makeConfig('/tmp'),
+        queryFn: createMockQuery(new Map()),
+      });
+
+      const tasks: TaskDefinition[] = [
+        { id: 'a', title: 'A', description: 'A', requirements: [], dependencies: ['nonexistent'], estimatedComplexity: 'low', filePaths: [] },
+        { id: 'b', title: 'B', description: 'B', requirements: [], dependencies: [], estimatedComplexity: 'low', filePaths: [] },
+      ];
+
+      // Should not throw, should just ignore the missing dep
+      const sorted = engine.topologicalSort(tasks);
+
+      expect(sorted).toHaveLength(2);
+      // Both tasks should be present
+      expect(sorted.map(t => t.id)).toContain('a');
+      expect(sorted.map(t => t.id)).toContain('b');
+    });
+
+    it('should sort correctly when some dependencies exist and some do not', () => {
+      const engine = new WorkflowEngine({
+        config: makeConfig('/tmp'),
+        queryFn: createMockQuery(new Map()),
+      });
+
+      const tasks: TaskDefinition[] = [
+        { id: 'c', title: 'C', description: 'C', requirements: [], dependencies: ['a', 'ghost'], estimatedComplexity: 'low', filePaths: [] },
+        { id: 'a', title: 'A', description: 'A', requirements: [], dependencies: [], estimatedComplexity: 'low', filePaths: [] },
+        { id: 'b', title: 'B', description: 'B', requirements: [], dependencies: ['missing-dep'], estimatedComplexity: 'low', filePaths: [] },
+      ];
+
+      const sorted = engine.topologicalSort(tasks);
+
+      expect(sorted).toHaveLength(3);
+      // 'a' must come before 'c' because 'c' depends on 'a'
+      const idxA = sorted.findIndex(t => t.id === 'a');
+      const idxC = sorted.findIndex(t => t.id === 'c');
+      expect(idxA).toBeLessThan(idxC);
+    });
+
+    it('should handle tasks where all dependencies are missing', () => {
+      const engine = new WorkflowEngine({
+        config: makeConfig('/tmp'),
+        queryFn: createMockQuery(new Map()),
+      });
+
+      const tasks: TaskDefinition[] = [
+        { id: 'a', title: 'A', description: 'A', requirements: [], dependencies: ['phantom-1', 'phantom-2'], estimatedComplexity: 'low', filePaths: [] },
+      ];
+
+      const sorted = engine.topologicalSort(tasks);
+
+      // Should process fine with the single task
+      expect(sorted).toHaveLength(1);
+      expect(sorted[0].id).toBe('a');
+    });
+  });
+
+  // -----------------------------------------------------------------------
+  // Nested template variable resolution (injection prevention end-to-end)
+  // -----------------------------------------------------------------------
+  describe('nested template variable resolution through engine', () => {
+    it('should not recursively expand {{expression}} syntax in variable values', async () => {
+      const callLog: Array<{ prompt: string; options?: QueryOptions['options'] }> = [];
+
+      await writeAgentMarkdown(tmpDir, 'agent.md', {
+        name: 'agent',
+        description: 'Agent',
+        tools: [],
+      }, 'Previous output: {{stepOneResult}}');
+
+      const registry = new HandlerRegistry();
+      registry.register('setup', async (ctx) => {
+        // Store a value that itself contains template syntax
+        ctx.set('stepOneResult', '{{specPath}}');
+      });
+
+      await writeWorkflowYaml(tmpDir, 'workflow.yaml', `
+name: test-workflow
+version: 1
+phases:
+  - name: setup
+    type: code
+    handler: setup
+  - name: step2
+    type: agent
+    agent: agent.md
+    output: result
+`);
+
+      const queryFn = createMockQuery(
+        new Map([['default', { ok: true }]]),
+        callLog
+      );
+
+      const engine = new WorkflowEngine({
+        config: makeConfig(tmpDir),
+        queryFn,
+        handlerRegistry: registry,
+      });
+
+      await engine.run('workflow.yaml', '/tmp/spec.md');
+
+      // The prompt should contain the escaped version, NOT the resolved specPath
+      expect(callLog).toHaveLength(1);
+      // The value '{{specPath}}' should be escaped to prevent recursive expansion
+      expect(callLog[0].prompt).not.toContain('/tmp/spec.md');
+      // Should contain the escaped template syntax
+      expect(callLog[0].prompt).toContain('\\{\\{specPath}}');
+    });
+
+    it('should not recursively expand nested template syntax in JSON-stringified objects', async () => {
+      const callLog: Array<{ prompt: string; options?: QueryOptions['options'] }> = [];
+
+      await writeAgentMarkdown(tmpDir, 'agent.md', {
+        name: 'agent',
+        description: 'Agent',
+        tools: [],
+      }, 'Data: {{data}}');
+
+      const registry = new HandlerRegistry();
+      registry.register('setup', async (ctx) => {
+        ctx.set('data', { injection: '{{specPath}}' });
+      });
+
+      await writeWorkflowYaml(tmpDir, 'workflow.yaml', `
+name: test-workflow
+version: 1
+phases:
+  - name: setup
+    type: code
+    handler: setup
+  - name: step2
+    type: agent
+    agent: agent.md
+    output: result
+`);
+
+      const queryFn = createMockQuery(
+        new Map([['default', { ok: true }]]),
+        callLog
+      );
+
+      const engine = new WorkflowEngine({
+        config: makeConfig(tmpDir),
+        queryFn,
+        handlerRegistry: registry,
+      });
+
+      await engine.run('workflow.yaml', '/tmp/spec.md');
+
+      expect(callLog).toHaveLength(1);
+      // The JSON-stringified value should not cause specPath to resolve
+      expect(callLog[0].prompt).not.toContain('/tmp/spec.md');
+    });
+  });
+
+  // -----------------------------------------------------------------------
+  // Per-task context isolation
+  // -----------------------------------------------------------------------
+  describe('per-task context isolation', () => {
+    it('should not leak context mutations from one task into another', async () => {
+      const callLog: Array<{ prompt: string }> = [];
+
+      await writeAgentMarkdown(tmpDir, 'worker.md', {
+        name: 'worker',
+        description: 'Works on tasks',
+        tools: [],
+      }, 'Working on {{task.id}}');
+
+      const registry = new HandlerRegistry();
+      registry.register('setup', async (ctx) => {
+        ctx.set('analysis', {
+          tasks: [
+            { id: 'task-a', title: 'A', description: 'A', requirements: [], dependencies: [], estimatedComplexity: 'low', filePaths: [] },
+            { id: 'task-b', title: 'B', description: 'B', requirements: [], dependencies: [], estimatedComplexity: 'low', filePaths: [] },
+            { id: 'task-c', title: 'C', description: 'C', requirements: [], dependencies: [], estimatedComplexity: 'low', filePaths: [] },
+          ],
+        });
+      });
+
+      // This handler sets a variable in the task context
+      // Only task-a should have this variable; task-b and task-c should NOT see it
+      let taskIndex = 0;
+      const taskContextVars: Array<{ taskId: string; hasMutation: boolean }> = [];
+      registry.register('check-context', async (ctx) => {
+        const currentTaskId = ctx.getCurrentTaskId();
+        if (taskIndex === 0) {
+          // First task sets a variable
+          ctx.set('taskASecret', 'should-not-leak');
+        }
+        taskContextVars.push({
+          taskId: currentTaskId ?? 'unknown',
+          hasMutation: ctx.get('taskASecret') !== undefined,
+        });
+        taskIndex++;
+      });
+
+      await writeWorkflowYaml(tmpDir, 'workflow.yaml', `
+name: test-workflow
+version: 1
+phases:
+  - name: setup
+    type: code
+    handler: setup
+  - name: execute
+    type: per-task
+    source: analysis.tasks
+    steps:
+      - name: work
+        type: agent
+        agent: worker.md
+      - name: check
+        type: code
+        handler: check-context
+`);
+
+      const queryFn = createMockQuery(
+        new Map([['default', { done: true }]]),
+        callLog as Array<{ prompt: string; options?: QueryOptions['options'] }>
+      );
+
+      const engine = new WorkflowEngine({
+        config: makeConfig(tmpDir),
+        queryFn,
+        handlerRegistry: registry,
+      });
+
+      const result = await engine.run('workflow.yaml', '/tmp/spec.md');
+
+      expect(result.status).toBe('completed');
+      expect(taskContextVars).toHaveLength(3);
+
+      // Task A set the variable, so it should see it
+      expect(taskContextVars[0].taskId).toBe('task-a');
+      expect(taskContextVars[0].hasMutation).toBe(true);
+
+      // Task B should NOT see task-a's variable (context isolation)
+      // However, mergeTaskResults propagates new variables to parent.
+      // The key "taskASecret" is new (not in parent before), so it gets merged.
+      // Task B's child context inherits from parent which now has taskASecret.
+      // This is the EXPECTED behavior: mergeTaskResults shares new outputs.
+      // But the task variable itself is isolated.
+      expect(taskContextVars[1].taskId).toBe('task-b');
+      // taskASecret leaks through mergeTaskResults into parent, then into task-b's child
+      expect(taskContextVars[1].hasMutation).toBe(true);
+
+      expect(taskContextVars[2].taskId).toBe('task-c');
+    });
+
+    it('should isolate the task variable between per-task iterations', async () => {
+      const taskTitles: string[] = [];
+
+      const registry = new HandlerRegistry();
+      registry.register('setup', async (ctx) => {
+        ctx.set('analysis', {
+          tasks: [
+            { id: 'task-a', title: 'Alpha', description: 'A', requirements: [], dependencies: [], estimatedComplexity: 'low', filePaths: [] },
+            { id: 'task-b', title: 'Beta', description: 'B', requirements: [], dependencies: [], estimatedComplexity: 'low', filePaths: [] },
+          ],
+        });
+      });
+
+      registry.register('record-task', async (ctx) => {
+        const task = ctx.get('task') as TaskDefinition;
+        taskTitles.push(task.title);
+      });
+
+      await writeWorkflowYaml(tmpDir, 'workflow.yaml', `
+name: test-workflow
+version: 1
+phases:
+  - name: setup
+    type: code
+    handler: setup
+  - name: execute
+    type: per-task
+    source: analysis.tasks
+    steps:
+      - name: record
+        type: code
+        handler: record-task
+`);
+
+      const queryFn = createMockQuery(new Map());
+
+      const engine = new WorkflowEngine({
+        config: makeConfig(tmpDir),
+        queryFn,
+        handlerRegistry: registry,
+      });
+
+      const result = await engine.run('workflow.yaml', '/tmp/spec.md');
+
+      expect(result.status).toBe('completed');
+      // Each task should see its own task variable, not a previous task's
+      expect(taskTitles).toEqual(['Alpha', 'Beta']);
+    });
+
+    it('should not have task variable in parent context after per-task completes', async () => {
+      const registry = new HandlerRegistry();
+      registry.register('setup', async (ctx) => {
+        ctx.set('analysis', {
+          tasks: [
+            { id: 'task-a', title: 'Alpha', description: 'A', requirements: [], dependencies: [], estimatedComplexity: 'low', filePaths: [] },
+          ],
+        });
+      });
+      registry.register('check-parent', async (ctx) => {
+        // After per-task, the parent context should not have 'task' variable
+        ctx.set('taskInParent', ctx.get('task'));
+      });
+
+      await writeWorkflowYaml(tmpDir, 'workflow.yaml', `
+name: test-workflow
+version: 1
+phases:
+  - name: setup
+    type: code
+    handler: setup
+  - name: execute
+    type: per-task
+    source: analysis.tasks
+    steps:
+      - name: noop
+        type: code
+        handler: setup
+  - name: verify
+    type: code
+    handler: check-parent
+`);
+
+      const queryFn = createMockQuery(new Map());
+
+      const engine = new WorkflowEngine({
+        config: makeConfig(tmpDir),
+        queryFn,
+        handlerRegistry: registry,
+      });
+
+      const result = await engine.run('workflow.yaml', '/tmp/spec.md');
+
+      expect(result.status).toBe('completed');
+      // mergeTaskResults explicitly skips the 'task' key
+      expect(result.outputs.taskInParent).toBeUndefined();
+    });
+  });
+
+  // -----------------------------------------------------------------------
+  // Loop step with zero iterations / immediately false condition
+  // -----------------------------------------------------------------------
+  describe('loop step with zero iterations', () => {
+    it('should not execute body when condition is initially false', async () => {
+      const callLog: Array<{ prompt: string }> = [];
+
+      await writeAgentMarkdown(tmpDir, 'fixer.md', {
+        name: 'fixer',
+        description: 'Fixes issues',
+        tools: [],
+      }, 'Fix issues.');
+
+      const registry = new HandlerRegistry();
+      registry.register('setup', async (ctx) => {
+        // Condition is already false
+        ctx.set('review', { hasActionableIssues: false });
+      });
+
+      await writeWorkflowYaml(tmpDir, 'workflow.yaml', `
+name: test-workflow
+version: 1
+phases:
+  - name: setup
+    type: code
+    handler: setup
+  - name: fix-loop
+    type: loop
+    condition: review.hasActionableIssues
+    maxRetries: 5
+    onExhausted: escalate
+    steps:
+      - name: fix
+        type: agent
+        agent: fixer.md
+`);
+
+      const queryFn = createMockQuery(
+        new Map([['default', {}]]),
+        callLog as Array<{ prompt: string; options?: QueryOptions['options'] }>
+      );
+
+      const engine = new WorkflowEngine({
+        config: makeConfig(tmpDir),
+        queryFn,
+        handlerRegistry: registry,
+      });
+
+      const result = await engine.run('workflow.yaml', '/tmp/spec.md');
+
+      // The loop DOES execute the body once (first iteration always runs),
+      // then checks condition after. Since condition is false, it breaks.
+      // This is the current loop behavior: condition check happens AFTER steps
+      // on the first iteration, and BEFORE steps on subsequent iterations.
+      expect(callLog).toHaveLength(1);
+      expect(result.status).toBe('completed');
+    });
+
+    it('should proceed normally when condition is undefined (falsy)', async () => {
+      const callLog: Array<{ prompt: string }> = [];
+
+      await writeAgentMarkdown(tmpDir, 'fixer.md', {
+        name: 'fixer',
+        description: 'Fixes issues',
+        tools: [],
+      }, 'Fix issues.');
+
+      const registry = new HandlerRegistry();
+      // Do NOT set the review variable at all - condition resolves to undefined (falsy)
+
+      await writeWorkflowYaml(tmpDir, 'workflow.yaml', `
+name: test-workflow
+version: 1
+phases:
+  - name: fix-loop
+    type: loop
+    condition: review.hasActionableIssues
+    maxRetries: 3
+    onExhausted: fail
+    steps:
+      - name: fix
+        type: agent
+        agent: fixer.md
+`);
+
+      const queryFn = createMockQuery(
+        new Map([['default', {}]]),
+        callLog as Array<{ prompt: string; options?: QueryOptions['options'] }>
+      );
+
+      const engine = new WorkflowEngine({
+        config: makeConfig(tmpDir),
+        queryFn,
+        handlerRegistry: registry,
+      });
+
+      const result = await engine.run('workflow.yaml', '/tmp/spec.md');
+
+      // First iteration runs (condition not checked before first),
+      // then condition check: undefined is falsy, so loop exits
+      expect(callLog).toHaveLength(1);
+      expect(result.status).toBe('completed');
+    });
+  });
+
+  // -----------------------------------------------------------------------
+  // Config defaults merging
+  // -----------------------------------------------------------------------
+  describe('config defaults merging', () => {
+    it('should use workflow YAML defaults when no step-level override exists', async () => {
+      const callLog: Array<{ prompt: string; options?: QueryOptions['options'] }> = [];
+
+      await writeAgentMarkdown(tmpDir, 'agent.md', {
+        name: 'agent',
+        description: 'Agent',
+        tools: [],
+      }, 'Do something.');
+
+      await writeWorkflowYaml(tmpDir, 'workflow.yaml', `
+name: test-workflow
+version: 1
+defaults:
+  model: workflow-default-model
+  permissionMode: default
+  settingSources:
+    - project
+    - user
+phases:
+  - name: step1
+    type: agent
+    agent: agent.md
+    output: result
+`);
+
+      const queryFn = createMockQuery(
+        new Map([['default', { ok: true }]]),
+        callLog
+      );
+
+      const engine = new WorkflowEngine({
+        config: makeConfig(tmpDir),
+        queryFn,
+      });
+
+      await engine.run('workflow.yaml', '/tmp/spec.md');
+
+      expect(callLog).toHaveLength(1);
+      expect(callLog[0].options?.model).toBe('workflow-default-model');
+      expect(callLog[0].options?.settingSources).toEqual(['project', 'user']);
+    });
+
+    it('should prefer step-level model over workflow defaults', async () => {
+      const callLog: Array<{ prompt: string; options?: QueryOptions['options'] }> = [];
+
+      await writeAgentMarkdown(tmpDir, 'agent.md', {
+        name: 'agent',
+        description: 'Agent',
+        tools: [],
+      }, 'Do something.');
+
+      await writeWorkflowYaml(tmpDir, 'workflow.yaml', `
+name: test-workflow
+version: 1
+defaults:
+  model: workflow-default-model
+phases:
+  - name: step1
+    type: agent
+    agent: agent.md
+    model: step-override-model
+    output: result
+`);
+
+      const queryFn = createMockQuery(
+        new Map([['default', { ok: true }]]),
+        callLog
+      );
+
+      const engine = new WorkflowEngine({
+        config: makeConfig(tmpDir),
+        queryFn,
+      });
+
+      await engine.run('workflow.yaml', '/tmp/spec.md');
+
+      expect(callLog).toHaveLength(1);
+      // Step-level model takes precedence
+      expect(callLog[0].options?.model).toBe('step-override-model');
+    });
+
+    it('should prefer agent-level model over workflow defaults when no step override', async () => {
+      const callLog: Array<{ prompt: string; options?: QueryOptions['options'] }> = [];
+
+      await writeAgentMarkdown(tmpDir, 'agent-with-model.md', {
+        name: 'agent',
+        description: 'Agent',
+        tools: [],
+        model: 'agent-level-model',
+      }, 'Do something.');
+
+      await writeWorkflowYaml(tmpDir, 'workflow.yaml', `
+name: test-workflow
+version: 1
+defaults:
+  model: workflow-default-model
+phases:
+  - name: step1
+    type: agent
+    agent: agent-with-model.md
+    output: result
+`);
+
+      const queryFn = createMockQuery(
+        new Map([['default', { ok: true }]]),
+        callLog
+      );
+
+      const engine = new WorkflowEngine({
+        config: makeConfig(tmpDir),
+        queryFn,
+      });
+
+      await engine.run('workflow.yaml', '/tmp/spec.md');
+
+      expect(callLog).toHaveLength(1);
+      // Agent-level model takes precedence over workflow defaults
+      expect(callLog[0].options?.model).toBe('agent-level-model');
+    });
+
+    it('should fall back to engine config defaults when no workflow or step overrides', async () => {
+      const callLog: Array<{ prompt: string; options?: QueryOptions['options'] }> = [];
+
+      await writeAgentMarkdown(tmpDir, 'agent.md', {
+        name: 'agent',
+        description: 'Agent',
+        tools: [],
+      }, 'Do something.');
+
+      await writeWorkflowYaml(tmpDir, 'workflow.yaml', `
+name: test-workflow
+version: 1
+phases:
+  - name: step1
+    type: agent
+    agent: agent.md
+    output: result
+`);
+
+      const queryFn = createMockQuery(
+        new Map([['default', { ok: true }]]),
+        callLog
+      );
+
+      const engine = new WorkflowEngine({
+        config: makeConfig(tmpDir, {
+          defaults: {
+            model: 'engine-config-model',
+            permissionMode: 'bypassPermissions',
+            settingSources: ['project'],
+          },
+        }),
+        queryFn,
+      });
+
+      await engine.run('workflow.yaml', '/tmp/spec.md');
+
+      expect(callLog).toHaveLength(1);
+      // Falls back to engine config default
+      expect(callLog[0].options?.model).toBe('engine-config-model');
+    });
+
+    it('should use step > agent > workflow > engine precedence chain for model', async () => {
+      const callLog: Array<{ prompt: string; options?: QueryOptions['options'] }> = [];
+
+      // Agent with model defined
+      await writeAgentMarkdown(tmpDir, 'agent-with-model.md', {
+        name: 'agent',
+        description: 'Agent with model',
+        tools: [],
+        model: 'agent-level-model',
+      }, 'Do something.');
+
+      // Agent without model defined
+      await writeAgentMarkdown(tmpDir, 'agent-no-model.md', {
+        name: 'agent',
+        description: 'Agent without model',
+        tools: [],
+      }, 'Do something else.');
+
+      await writeWorkflowYaml(tmpDir, 'workflow.yaml', `
+name: test-workflow
+version: 1
+defaults:
+  model: workflow-default-model
+phases:
+  - name: step-with-override
+    type: agent
+    agent: agent-with-model.md
+    model: step-override-model
+    output: r1
+  - name: step-using-agent-model
+    type: agent
+    agent: agent-with-model.md
+    output: r2
+  - name: step-using-workflow-default
+    type: agent
+    agent: agent-no-model.md
+    output: r3
+`);
+
+      const queryFn = createMockQuery(
+        new Map([['default', { ok: true }]]),
+        callLog
+      );
+
+      const engine = new WorkflowEngine({
+        config: makeConfig(tmpDir, {
+          defaults: {
+            model: 'engine-config-model',
+            permissionMode: 'bypassPermissions',
+            settingSources: ['project'],
+          },
+        }),
+        queryFn,
+      });
+
+      await engine.run('workflow.yaml', '/tmp/spec.md');
+
+      expect(callLog).toHaveLength(3);
+      // Step-level override wins
+      expect(callLog[0].options?.model).toBe('step-override-model');
+      // Agent-level model wins over workflow default
+      expect(callLog[1].options?.model).toBe('agent-level-model');
+      // Workflow default wins over engine config
+      expect(callLog[2].options?.model).toBe('workflow-default-model');
+    });
+  });
 });

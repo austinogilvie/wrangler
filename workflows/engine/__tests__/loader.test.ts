@@ -873,6 +873,78 @@ describe('renderTemplate()', () => {
       expect(result).toBe('');
     });
   });
+
+  describe('template injection prevention', () => {
+    it('should escape template syntax in resolved values to prevent injection', () => {
+      const result = renderTemplate('Hello {{name}}', { name: '{{malicious}}' });
+      // The resolved value should have {{ escaped, NOT resolve further
+      expect(result).toBe('Hello \\{\\{malicious}}');
+      expect(result).not.toContain('{{malicious}}');
+    });
+
+    it('should escape template syntax in numeric-like injection attempts', () => {
+      const result = renderTemplate('Value: {{data}}', { data: '{{__proto__}}' });
+      expect(result).toBe('Value: \\{\\{__proto__}}');
+    });
+
+    it('should escape template syntax in JSON-stringified objects', () => {
+      const result = renderTemplate('Data: {{obj}}', {
+        obj: { key: '{{injected}}' },
+      });
+      // JSON.stringify will produce {"key":"{{injected}}"} which should have {{ escaped
+      expect(result).not.toContain('{{injected}}');
+      expect(result).toContain('\\{\\{injected}}');
+    });
+
+    it('should not affect normal values without template syntax', () => {
+      const result = renderTemplate('Hello {{name}}', { name: 'World' });
+      expect(result).toBe('Hello World');
+    });
+
+    it('should handle values with single braces (not template syntax)', () => {
+      const result = renderTemplate('Code: {{code}}', { code: 'if (x) { y }' });
+      expect(result).toBe('Code: if (x) { y }');
+    });
+
+    it('should not recursively expand when variable value contains other variable references', () => {
+      // If a variable's value contains {{otherVar}}, it should NOT resolve otherVar
+      const result = renderTemplate('Output: {{data}}', {
+        data: '{{secret}}',
+        secret: 'should-not-appear',
+      });
+      // data resolves to "{{secret}}", which gets escaped, NOT recursively resolved
+      expect(result).not.toContain('should-not-appear');
+      expect(result).toContain('\\{\\{secret}}');
+    });
+
+    it('should not recursively expand deeply nested template references', () => {
+      const result = renderTemplate('A: {{a}}', {
+        a: '{{b}}',
+        b: '{{c}}',
+        c: 'deep-value',
+      });
+      // Only one level of resolution happens: a -> "{{b}}" (escaped)
+      expect(result).not.toContain('deep-value');
+      expect(result).not.toContain('{{c}}');
+      expect(result).toContain('\\{\\{b}}');
+    });
+
+    it('should handle template syntax in each block items', () => {
+      const result = renderTemplate(
+        '{{#each items}}Item: {{this}}\n{{/each}}',
+        { items: ['safe', '{{injected}}', 'also-safe'] }
+      );
+      expect(result).toContain('Item: safe');
+      expect(result).toContain('Item: also-safe');
+      // The {{this}} replacement injects '{{injected}}' into the template,
+      // which is then caught by the final simple interpolation pass.
+      // Since 'injected' is not in vars, it resolves to empty string.
+      // This documents the current behavior: each block items with template
+      // syntax get processed by the subsequent interpolation pass.
+      expect(result).toContain('Item: \n');
+      expect(result).not.toContain('{{injected}}');
+    });
+  });
 });
 
 // ============================================================================
@@ -949,6 +1021,44 @@ describe('resolveExpression()', () => {
     // Since resolveExpression splits on '.', numeric keys on objects work
     const vars = { items: { '0': 'first', '1': 'second' } };
     expect(resolveExpression('items.0', vars)).toBe('first');
+  });
+
+  describe('prototype pollution prevention', () => {
+    it('should return undefined for __proto__ access', () => {
+      const vars = { foo: 'bar' };
+      expect(resolveExpression('__proto__', vars)).toBeUndefined();
+    });
+
+    it('should return undefined for constructor.prototype access', () => {
+      const vars = { foo: 'bar' };
+      expect(resolveExpression('constructor.prototype', vars)).toBeUndefined();
+    });
+
+    it('should return undefined for nested __proto__ access', () => {
+      const vars = { foo: { bar: 'baz' } };
+      expect(resolveExpression('foo.__proto__', vars)).toBeUndefined();
+    });
+
+    it('should return undefined for constructor access', () => {
+      const vars = { foo: 'bar' };
+      expect(resolveExpression('constructor', vars)).toBeUndefined();
+    });
+
+    it('should return undefined for prototype access', () => {
+      const vars = { foo: 'bar' };
+      expect(resolveExpression('prototype', vars)).toBeUndefined();
+    });
+
+    it('should return undefined for deeply nested prototype pollution paths', () => {
+      const vars = { a: { b: { c: 'safe' } } };
+      expect(resolveExpression('a.__proto__.polluted', vars)).toBeUndefined();
+      expect(resolveExpression('a.constructor.prototype', vars)).toBeUndefined();
+    });
+
+    it('should still resolve normal properties that exist', () => {
+      const vars = { a: { b: 'value' } };
+      expect(resolveExpression('a.b', vars)).toBe('value');
+    });
   });
 });
 
