@@ -1,0 +1,844 @@
+/**
+ * Tests for WorkflowContext - variable storage, expression evaluation,
+ * template vars, checkpoint serialization, changed file tracking.
+ */
+
+import { WorkflowContext } from '../src/state.js';
+import type { TaskDefinition } from '../src/schemas/index.js';
+
+// --- Helper: build a minimal valid TaskDefinition ---
+
+function makeTask(overrides: Partial<TaskDefinition> = {}): TaskDefinition {
+  return {
+    id: 'task-001',
+    title: 'Implement auth module',
+    description: 'Build the authentication system',
+    requirements: ['Must support JWT', 'Must rate-limit'],
+    dependencies: [],
+    estimatedComplexity: 'medium',
+    filePaths: ['src/auth.ts'],
+    ...overrides,
+  };
+}
+
+// ================================================================
+// set() and get()
+// ================================================================
+
+describe('WorkflowContext - set() and get()', () => {
+  it('stores and retrieves a string value', () => {
+    const ctx = new WorkflowContext();
+    ctx.set('name', 'workflow-1');
+    expect(ctx.get('name')).toBe('workflow-1');
+  });
+
+  it('stores and retrieves a number value', () => {
+    const ctx = new WorkflowContext();
+    ctx.set('count', 42);
+    expect(ctx.get('count')).toBe(42);
+  });
+
+  it('stores and retrieves an object value', () => {
+    const ctx = new WorkflowContext();
+    const obj = { tasks: [{ id: '1' }], total: 1 };
+    ctx.set('analysis', obj);
+    expect(ctx.get('analysis')).toEqual(obj);
+  });
+
+  it('stores and retrieves a boolean value', () => {
+    const ctx = new WorkflowContext();
+    ctx.set('done', true);
+    expect(ctx.get('done')).toBe(true);
+  });
+
+  it('stores and retrieves null', () => {
+    const ctx = new WorkflowContext();
+    ctx.set('empty', null);
+    expect(ctx.get('empty')).toBeNull();
+  });
+
+  it('stores and retrieves an array value', () => {
+    const ctx = new WorkflowContext();
+    ctx.set('items', [1, 2, 3]);
+    expect(ctx.get('items')).toEqual([1, 2, 3]);
+  });
+
+  it('returns undefined for unset keys', () => {
+    const ctx = new WorkflowContext();
+    expect(ctx.get('nonexistent')).toBeUndefined();
+  });
+
+  it('overwrites existing values', () => {
+    const ctx = new WorkflowContext();
+    ctx.set('x', 1);
+    ctx.set('x', 2);
+    expect(ctx.get('x')).toBe(2);
+  });
+
+  it('initializes with provided variables', () => {
+    const ctx = new WorkflowContext({ greeting: 'hello', count: 5 });
+    expect(ctx.get('greeting')).toBe('hello');
+    expect(ctx.get('count')).toBe(5);
+  });
+
+  it('does not share state with initial vars object (shallow copy)', () => {
+    const initial = { a: 1 };
+    const ctx = new WorkflowContext(initial);
+    ctx.set('a', 99);
+    expect(initial.a).toBe(1); // original unchanged
+  });
+});
+
+// ================================================================
+// resolve() - dot notation
+// ================================================================
+
+describe('WorkflowContext - resolve()', () => {
+  it('resolves a top-level variable', () => {
+    const ctx = new WorkflowContext({ name: 'test' });
+    expect(ctx.resolve('name')).toBe('test');
+  });
+
+  it('resolves a nested property via dot notation', () => {
+    const ctx = new WorkflowContext({
+      analysis: { tasks: [{ id: '1' }, { id: '2' }] },
+    });
+    expect(ctx.resolve('analysis.tasks')).toEqual([{ id: '1' }, { id: '2' }]);
+  });
+
+  it('resolves deeply nested properties', () => {
+    const ctx = new WorkflowContext({
+      a: { b: { c: { d: 'deep' } } },
+    });
+    expect(ctx.resolve('a.b.c.d')).toBe('deep');
+  });
+
+  it('returns undefined for non-existent top-level path', () => {
+    const ctx = new WorkflowContext();
+    expect(ctx.resolve('missing')).toBeUndefined();
+  });
+
+  it('returns undefined for non-existent nested path', () => {
+    const ctx = new WorkflowContext({ a: { b: 1 } });
+    expect(ctx.resolve('a.b.c')).toBeUndefined();
+  });
+
+  it('returns undefined when an intermediate is null', () => {
+    const ctx = new WorkflowContext({ a: null });
+    expect(ctx.resolve('a.b')).toBeUndefined();
+  });
+
+  it('returns undefined when an intermediate is a primitive', () => {
+    const ctx = new WorkflowContext({ a: 42 });
+    expect(ctx.resolve('a.b')).toBeUndefined();
+  });
+
+  it('resolves task.title on a context with task set', () => {
+    const ctx = new WorkflowContext();
+    ctx.set('task', makeTask({ title: 'My Title' }));
+    expect(ctx.resolve('task.title')).toBe('My Title');
+  });
+
+  it('resolves array element properties via full path', () => {
+    const ctx = new WorkflowContext({
+      analysis: { tasks: [{ id: 't1' }, { id: 't2' }] },
+    });
+    // resolveExpression walks parts, so "analysis.tasks.0.id" works
+    // because arrays are objects with numeric keys
+    expect(ctx.resolve('analysis.tasks.0.id')).toBe('t1');
+    expect(ctx.resolve('analysis.tasks.1.id')).toBe('t2');
+  });
+});
+
+// ================================================================
+// evaluate() - condition expressions
+// ================================================================
+
+describe('WorkflowContext - evaluate()', () => {
+  describe('truthy checks', () => {
+    it('returns true for truthy string', () => {
+      const ctx = new WorkflowContext({ flag: 'yes' });
+      expect(ctx.evaluate('flag')).toBe(true);
+    });
+
+    it('returns false for empty string', () => {
+      const ctx = new WorkflowContext({ flag: '' });
+      expect(ctx.evaluate('flag')).toBe(false);
+    });
+
+    it('returns true for truthy number', () => {
+      const ctx = new WorkflowContext({ count: 5 });
+      expect(ctx.evaluate('count')).toBe(true);
+    });
+
+    it('returns false for zero', () => {
+      const ctx = new WorkflowContext({ count: 0 });
+      expect(ctx.evaluate('count')).toBe(false);
+    });
+
+    it('returns true for truthy object', () => {
+      const ctx = new WorkflowContext({ obj: { key: 'val' } });
+      expect(ctx.evaluate('obj')).toBe(true);
+    });
+
+    it('returns false for undefined variable', () => {
+      const ctx = new WorkflowContext();
+      expect(ctx.evaluate('nonexistent')).toBe(false);
+    });
+
+    it('returns false for null variable', () => {
+      const ctx = new WorkflowContext({ val: null });
+      expect(ctx.evaluate('val')).toBe(false);
+    });
+
+    it('returns true for true boolean', () => {
+      const ctx = new WorkflowContext({ review: { hasActionableIssues: true } });
+      expect(ctx.evaluate('review.hasActionableIssues')).toBe(true);
+    });
+
+    it('returns false for false boolean', () => {
+      const ctx = new WorkflowContext({ review: { hasActionableIssues: false } });
+      expect(ctx.evaluate('review.hasActionableIssues')).toBe(false);
+    });
+
+    it('returns true for non-empty array', () => {
+      const ctx = new WorkflowContext({ items: [1, 2] });
+      expect(ctx.evaluate('items')).toBe(true);
+    });
+  });
+
+  describe('equality comparisons (== and !=)', () => {
+    it('evaluates == with number literal', () => {
+      const ctx = new WorkflowContext({ verification: { testSuite: { exitCode: 0 } } });
+      expect(ctx.evaluate('verification.testSuite.exitCode == 0')).toBe(true);
+    });
+
+    it('evaluates != with number literal', () => {
+      const ctx = new WorkflowContext({ verification: { testSuite: { exitCode: 1 } } });
+      expect(ctx.evaluate('verification.testSuite.exitCode != 0')).toBe(true);
+    });
+
+    it('evaluates == false when values differ', () => {
+      const ctx = new WorkflowContext({ status: 'failed' });
+      expect(ctx.evaluate('status == "completed"')).toBe(false);
+    });
+
+    it('evaluates == true with string literal', () => {
+      const ctx = new WorkflowContext({ status: 'completed' });
+      expect(ctx.evaluate('status == "completed"')).toBe(true);
+    });
+
+    it('evaluates != true with string literal', () => {
+      const ctx = new WorkflowContext({ status: 'failed' });
+      expect(ctx.evaluate('status != "completed"')).toBe(true);
+    });
+
+    it('evaluates == with single-quoted string literal', () => {
+      const ctx = new WorkflowContext({ mode: 'fast' });
+      expect(ctx.evaluate("mode == 'fast'")).toBe(true);
+    });
+  });
+
+  describe('strict equality (=== and !==)', () => {
+    it('=== returns true for strict equality', () => {
+      const ctx = new WorkflowContext({ val: 42 });
+      expect(ctx.evaluate('val === 42')).toBe(true);
+    });
+
+    it('=== returns false for type mismatch', () => {
+      const ctx = new WorkflowContext({ val: '42' });
+      // "42" (string) !== 42 (number) with strict equality
+      expect(ctx.evaluate('val === 42')).toBe(false);
+    });
+
+    it('!== returns true for type mismatch', () => {
+      const ctx = new WorkflowContext({ val: '42' });
+      expect(ctx.evaluate('val !== 42')).toBe(true);
+    });
+
+    it('!== returns false for strict equality', () => {
+      const ctx = new WorkflowContext({ val: 42 });
+      expect(ctx.evaluate('val !== 42')).toBe(false);
+    });
+
+    it('== coerces types (loose equality)', () => {
+      const ctx = new WorkflowContext({ val: 0 });
+      // 0 == false is true with loose equality
+      expect(ctx.evaluate('val == false')).toBe(true);
+    });
+
+    it('!= with different types that are loosely equal', () => {
+      const ctx = new WorkflowContext({ val: 1 });
+      // 1 != true is false with loose equality (1 == true)
+      expect(ctx.evaluate('val != true')).toBe(false);
+    });
+  });
+
+  describe('numeric comparisons (>, <, >=, <=)', () => {
+    it('evaluates > correctly', () => {
+      const ctx = new WorkflowContext({ score: 85 });
+      expect(ctx.evaluate('score > 80')).toBe(true);
+      expect(ctx.evaluate('score > 85')).toBe(false);
+      expect(ctx.evaluate('score > 90')).toBe(false);
+    });
+
+    it('evaluates < correctly', () => {
+      const ctx = new WorkflowContext({ score: 30 });
+      expect(ctx.evaluate('score < 50')).toBe(true);
+      expect(ctx.evaluate('score < 30')).toBe(false);
+    });
+
+    it('evaluates >= correctly', () => {
+      const ctx = new WorkflowContext({ score: 80 });
+      expect(ctx.evaluate('score >= 80')).toBe(true);
+      expect(ctx.evaluate('score >= 81')).toBe(false);
+    });
+
+    it('evaluates <= correctly', () => {
+      const ctx = new WorkflowContext({ score: 80 });
+      expect(ctx.evaluate('score <= 80')).toBe(true);
+      expect(ctx.evaluate('score <= 79')).toBe(false);
+    });
+
+    it('compares two expressions', () => {
+      const ctx = new WorkflowContext({ a: 10, b: 20 });
+      expect(ctx.evaluate('a < b')).toBe(true);
+      expect(ctx.evaluate('b > a')).toBe(true);
+    });
+  });
+
+  describe('literal resolution in comparisons', () => {
+    it('resolves boolean literal true', () => {
+      const ctx = new WorkflowContext({ flag: true });
+      expect(ctx.evaluate('flag == true')).toBe(true);
+    });
+
+    it('resolves boolean literal false', () => {
+      const ctx = new WorkflowContext({ flag: false });
+      expect(ctx.evaluate('flag == false')).toBe(true);
+    });
+
+    it('resolves null literal', () => {
+      const ctx = new WorkflowContext({ val: null });
+      expect(ctx.evaluate('val == null')).toBe(true);
+    });
+
+    it('resolves undefined literal', () => {
+      const ctx = new WorkflowContext();
+      expect(ctx.evaluate('missing == undefined')).toBe(true);
+    });
+
+    it('resolves negative number literal', () => {
+      const ctx = new WorkflowContext({ temp: -5 });
+      expect(ctx.evaluate('temp == -5')).toBe(true);
+    });
+
+    it('resolves float number literal', () => {
+      const ctx = new WorkflowContext({ ratio: 3.14 });
+      expect(ctx.evaluate('ratio == 3.14')).toBe(true);
+    });
+  });
+});
+
+// ================================================================
+// withTask() - child context creation
+// ================================================================
+
+describe('WorkflowContext - withTask()', () => {
+  it('creates child with task variable set', () => {
+    const parent = new WorkflowContext({ specId: 'spec-1' });
+    const task = makeTask();
+    const child = parent.withTask(task);
+
+    expect(child.get('task')).toEqual(task);
+  });
+
+  it('child inherits parent variables', () => {
+    const parent = new WorkflowContext({ specId: 'spec-1', mode: 'auto' });
+    const child = parent.withTask(makeTask());
+
+    expect(child.get('specId')).toBe('spec-1');
+    expect(child.get('mode')).toBe('auto');
+  });
+
+  it('child modifications do not affect parent variables', () => {
+    const parent = new WorkflowContext({ specId: 'spec-1' });
+    const child = parent.withTask(makeTask());
+    child.set('newVar', 'childOnly');
+
+    expect(parent.get('newVar')).toBeUndefined();
+  });
+
+  it('child inherits completed phases', () => {
+    const parent = new WorkflowContext();
+    parent.markPhaseCompleted('analyze');
+    const child = parent.withTask(makeTask());
+
+    expect(child.getCompletedPhases()).toContain('analyze');
+  });
+
+  it('child inherits changed files', () => {
+    const parent = new WorkflowContext();
+    parent.addChangedFile('src/foo.ts');
+    const child = parent.withTask(makeTask());
+
+    expect(child.getChangedFiles()).toContain('src/foo.ts');
+  });
+
+  it('sets currentTaskId on the child', () => {
+    const parent = new WorkflowContext();
+    const task = makeTask({ id: 'task-007' });
+    const child = parent.withTask(task);
+
+    expect(child.getCurrentTaskId()).toBe('task-007');
+  });
+
+  it('parent currentTaskId remains null', () => {
+    const parent = new WorkflowContext();
+    parent.withTask(makeTask());
+
+    expect(parent.getCurrentTaskId()).toBeNull();
+  });
+
+  it('child changed files list is independent from parent', () => {
+    const parent = new WorkflowContext();
+    parent.addChangedFile('src/a.ts');
+    const child = parent.withTask(makeTask());
+    child.addChangedFile('src/b.ts');
+
+    expect(parent.getChangedFiles()).toEqual(['src/a.ts']);
+    expect(child.getChangedFiles()).toEqual(['src/a.ts', 'src/b.ts']);
+  });
+
+  it('child completed phases list is independent from parent', () => {
+    const parent = new WorkflowContext();
+    parent.markPhaseCompleted('plan');
+    const child = parent.withTask(makeTask());
+    child.markPhaseCompleted('implement');
+
+    expect(parent.getCompletedPhases()).toEqual(['plan']);
+    expect(child.getCompletedPhases()).toEqual(['plan', 'implement']);
+  });
+});
+
+// ================================================================
+// mergeTaskResults()
+// ================================================================
+
+describe('WorkflowContext - mergeTaskResults()', () => {
+  it('merges new variables from child into parent', () => {
+    const parent = new WorkflowContext({ specId: 'spec-1' });
+    const child = parent.withTask(makeTask());
+    child.set('implResult', { status: 'success' });
+
+    parent.mergeTaskResults(child);
+    expect(parent.get('implResult')).toEqual({ status: 'success' });
+  });
+
+  it('does not overwrite existing parent variables', () => {
+    const parent = new WorkflowContext({ specId: 'spec-1' });
+    const child = parent.withTask(makeTask());
+    child.set('specId', 'overridden');
+
+    parent.mergeTaskResults(child);
+    expect(parent.get('specId')).toBe('spec-1');
+  });
+
+  it('does not merge the "task" variable from child', () => {
+    const parent = new WorkflowContext();
+    const child = parent.withTask(makeTask());
+
+    parent.mergeTaskResults(child);
+    expect(parent.get('task')).toBeUndefined();
+  });
+
+  it('merges changed files (deduplicated)', () => {
+    const parent = new WorkflowContext();
+    parent.addChangedFile('src/a.ts');
+    const child = parent.withTask(makeTask());
+    child.addChangedFile('src/a.ts'); // duplicate
+    child.addChangedFile('src/b.ts'); // new
+
+    parent.mergeTaskResults(child);
+    const files = parent.getChangedFiles();
+    expect(files).toContain('src/a.ts');
+    expect(files).toContain('src/b.ts');
+    // No duplicates
+    expect(files.filter(f => f === 'src/a.ts')).toHaveLength(1);
+  });
+
+  it('merges completed phases (deduplicated)', () => {
+    const parent = new WorkflowContext();
+    parent.markPhaseCompleted('plan');
+    const child = parent.withTask(makeTask());
+    child.markPhaseCompleted('plan'); // duplicate
+    child.markPhaseCompleted('implement'); // new
+
+    parent.mergeTaskResults(child);
+    const phases = parent.getCompletedPhases();
+    expect(phases).toContain('plan');
+    expect(phases).toContain('implement');
+    expect(phases.filter(p => p === 'plan')).toHaveLength(1);
+  });
+
+  it('merges multiple children sequentially', () => {
+    const parent = new WorkflowContext();
+
+    const child1 = parent.withTask(makeTask({ id: 'task-001' }));
+    child1.set('result1', 'done');
+    child1.addChangedFile('src/a.ts');
+    parent.mergeTaskResults(child1);
+
+    const child2 = parent.withTask(makeTask({ id: 'task-002' }));
+    child2.set('result2', 'done');
+    child2.addChangedFile('src/b.ts');
+    parent.mergeTaskResults(child2);
+
+    expect(parent.get('result1')).toBe('done');
+    expect(parent.get('result2')).toBe('done');
+    expect(parent.getChangedFiles()).toEqual(['src/a.ts', 'src/b.ts']);
+  });
+});
+
+// ================================================================
+// changedFilesMatch() - glob pattern matching
+// ================================================================
+
+describe('WorkflowContext - changedFilesMatch()', () => {
+  it('returns false when no changed files', () => {
+    const ctx = new WorkflowContext();
+    expect(ctx.changedFilesMatch(['*.ts'])).toBe(false);
+  });
+
+  it('matches exact file name', () => {
+    const ctx = new WorkflowContext();
+    ctx.addChangedFile('src/auth.ts');
+    expect(ctx.changedFilesMatch(['src/auth.ts'])).toBe(true);
+  });
+
+  it('matches single-star glob within a directory', () => {
+    const ctx = new WorkflowContext();
+    ctx.addChangedFile('src/auth.ts');
+    expect(ctx.changedFilesMatch(['src/*.ts'])).toBe(true);
+  });
+
+  it('does not match single-star glob across directories', () => {
+    const ctx = new WorkflowContext();
+    ctx.addChangedFile('src/deep/auth.ts');
+    // Single * should not cross directory boundaries
+    expect(ctx.changedFilesMatch(['src/*.ts'])).toBe(false);
+  });
+
+  it('matches double-star glob across directories', () => {
+    const ctx = new WorkflowContext();
+    ctx.addChangedFile('src/deep/nested/auth.ts');
+    expect(ctx.changedFilesMatch(['src/**/*.ts'])).toBe(true);
+  });
+
+  it('matches double-star at the beginning', () => {
+    const ctx = new WorkflowContext();
+    ctx.addChangedFile('src/components/Button.tsx');
+    expect(ctx.changedFilesMatch(['**/*.tsx'])).toBe(true);
+  });
+
+  it('returns true if any file matches any pattern', () => {
+    const ctx = new WorkflowContext();
+    ctx.addChangedFile('src/auth.ts');
+    ctx.addChangedFile('tests/auth.test.ts');
+    expect(ctx.changedFilesMatch(['tests/*.test.ts'])).toBe(true);
+  });
+
+  it('returns false when no file matches any pattern', () => {
+    const ctx = new WorkflowContext();
+    ctx.addChangedFile('src/auth.ts');
+    expect(ctx.changedFilesMatch(['*.md', '*.json'])).toBe(false);
+  });
+
+  it('handles dots in file names correctly', () => {
+    const ctx = new WorkflowContext();
+    ctx.addChangedFile('config.json');
+    // The dot in the pattern is escaped to literal dot
+    expect(ctx.changedFilesMatch(['config.json'])).toBe(true);
+    // Should not match configXjson
+    expect(ctx.changedFilesMatch(['configXjson'])).toBe(false);
+  });
+
+  it('matches multiple patterns', () => {
+    const ctx = new WorkflowContext();
+    ctx.addChangedFile('README.md');
+    expect(ctx.changedFilesMatch(['*.ts', '*.md'])).toBe(true);
+  });
+});
+
+// ================================================================
+// addChangedFile() and addChangedFilesFromResult()
+// ================================================================
+
+describe('WorkflowContext - addChangedFile()', () => {
+  it('adds a file to the changed files list', () => {
+    const ctx = new WorkflowContext();
+    ctx.addChangedFile('src/auth.ts');
+    expect(ctx.getChangedFiles()).toEqual(['src/auth.ts']);
+  });
+
+  it('does not add duplicate files', () => {
+    const ctx = new WorkflowContext();
+    ctx.addChangedFile('src/auth.ts');
+    ctx.addChangedFile('src/auth.ts');
+    expect(ctx.getChangedFiles()).toEqual(['src/auth.ts']);
+  });
+
+  it('adds multiple unique files', () => {
+    const ctx = new WorkflowContext();
+    ctx.addChangedFile('src/a.ts');
+    ctx.addChangedFile('src/b.ts');
+    expect(ctx.getChangedFiles()).toEqual(['src/a.ts', 'src/b.ts']);
+  });
+});
+
+describe('WorkflowContext - addChangedFilesFromResult()', () => {
+  it('adds files from a result with filesChanged', () => {
+    const ctx = new WorkflowContext();
+    ctx.addChangedFilesFromResult({
+      filesChanged: [{ path: 'src/a.ts' }, { path: 'src/b.ts' }],
+    });
+    expect(ctx.getChangedFiles()).toEqual(['src/a.ts', 'src/b.ts']);
+  });
+
+  it('handles result with no filesChanged property', () => {
+    const ctx = new WorkflowContext();
+    ctx.addChangedFilesFromResult({});
+    expect(ctx.getChangedFiles()).toEqual([]);
+  });
+
+  it('handles result with empty filesChanged array', () => {
+    const ctx = new WorkflowContext();
+    ctx.addChangedFilesFromResult({ filesChanged: [] });
+    expect(ctx.getChangedFiles()).toEqual([]);
+  });
+
+  it('deduplicates with existing changed files', () => {
+    const ctx = new WorkflowContext();
+    ctx.addChangedFile('src/a.ts');
+    ctx.addChangedFilesFromResult({
+      filesChanged: [{ path: 'src/a.ts' }, { path: 'src/b.ts' }],
+    });
+    expect(ctx.getChangedFiles()).toEqual(['src/a.ts', 'src/b.ts']);
+  });
+});
+
+// ================================================================
+// markPhaseCompleted() and getCompletedPhases()
+// ================================================================
+
+describe('WorkflowContext - markPhaseCompleted() and getCompletedPhases()', () => {
+  it('starts with no completed phases', () => {
+    const ctx = new WorkflowContext();
+    expect(ctx.getCompletedPhases()).toEqual([]);
+  });
+
+  it('marks a phase as completed', () => {
+    const ctx = new WorkflowContext();
+    ctx.markPhaseCompleted('analyze');
+    expect(ctx.getCompletedPhases()).toContain('analyze');
+  });
+
+  it('does not duplicate completed phases', () => {
+    const ctx = new WorkflowContext();
+    ctx.markPhaseCompleted('analyze');
+    ctx.markPhaseCompleted('analyze');
+    expect(ctx.getCompletedPhases()).toEqual(['analyze']);
+  });
+
+  it('tracks multiple phases in order', () => {
+    const ctx = new WorkflowContext();
+    ctx.markPhaseCompleted('analyze');
+    ctx.markPhaseCompleted('implement');
+    ctx.markPhaseCompleted('verify');
+    expect(ctx.getCompletedPhases()).toEqual(['analyze', 'implement', 'verify']);
+  });
+
+  it('returns a copy of the phases array', () => {
+    const ctx = new WorkflowContext();
+    ctx.markPhaseCompleted('analyze');
+    const phases = ctx.getCompletedPhases();
+    phases.push('hacked');
+    expect(ctx.getCompletedPhases()).toEqual(['analyze']);
+  });
+});
+
+// ================================================================
+// getTemplateVars()
+// ================================================================
+
+describe('WorkflowContext - getTemplateVars()', () => {
+  it('returns all variables as a plain object', () => {
+    const ctx = new WorkflowContext({ a: 1, b: 'two' });
+    ctx.set('c', [3]);
+    const vars = ctx.getTemplateVars();
+    expect(vars).toEqual({ a: 1, b: 'two', c: [3] });
+  });
+
+  it('returns a copy, not the internal reference', () => {
+    const ctx = new WorkflowContext({ a: 1 });
+    const vars = ctx.getTemplateVars();
+    vars.a = 999;
+    expect(ctx.get('a')).toBe(1);
+  });
+
+  it('returns empty object for fresh context', () => {
+    const ctx = new WorkflowContext();
+    expect(ctx.getTemplateVars()).toEqual({});
+  });
+});
+
+// ================================================================
+// toCheckpoint() and fromCheckpoint()
+// ================================================================
+
+describe('WorkflowContext - toCheckpoint() and fromCheckpoint()', () => {
+  it('round-trips a simple context', () => {
+    const ctx = new WorkflowContext({ specId: 'spec-1', count: 3 });
+    const checkpoint = ctx.toCheckpoint();
+    const restored = WorkflowContext.fromCheckpoint(checkpoint);
+
+    expect(restored.get('specId')).toBe('spec-1');
+    expect(restored.get('count')).toBe(3);
+  });
+
+  it('round-trips completed phases', () => {
+    const ctx = new WorkflowContext();
+    ctx.markPhaseCompleted('analyze');
+    ctx.markPhaseCompleted('implement');
+
+    const restored = WorkflowContext.fromCheckpoint(ctx.toCheckpoint());
+    expect(restored.getCompletedPhases()).toEqual(['analyze', 'implement']);
+  });
+
+  it('round-trips currentTaskId', () => {
+    const ctx = new WorkflowContext();
+    const child = ctx.withTask(makeTask({ id: 'task-42' }));
+
+    const restored = WorkflowContext.fromCheckpoint(child.toCheckpoint());
+    expect(restored.getCurrentTaskId()).toBe('task-42');
+  });
+
+  it('round-trips changed files', () => {
+    const ctx = new WorkflowContext();
+    ctx.addChangedFile('src/a.ts');
+    ctx.addChangedFile('src/b.ts');
+
+    const restored = WorkflowContext.fromCheckpoint(ctx.toCheckpoint());
+    expect(restored.getChangedFiles()).toEqual(['src/a.ts', 'src/b.ts']);
+  });
+
+  it('checkpoint contains all expected keys', () => {
+    const ctx = new WorkflowContext({ x: 1 });
+    ctx.markPhaseCompleted('plan');
+    ctx.addChangedFile('foo.ts');
+    const cp = ctx.toCheckpoint();
+
+    expect(cp).toHaveProperty('variables');
+    expect(cp).toHaveProperty('completedPhases');
+    expect(cp).toHaveProperty('currentTaskId');
+    expect(cp).toHaveProperty('changedFiles');
+  });
+
+  it('restores from empty checkpoint data gracefully', () => {
+    const restored = WorkflowContext.fromCheckpoint({});
+    expect(restored.getTemplateVars()).toEqual({});
+    expect(restored.getCompletedPhases()).toEqual([]);
+    expect(restored.getCurrentTaskId()).toBeNull();
+    expect(restored.getChangedFiles()).toEqual([]);
+  });
+
+  it('preserves complex nested objects through round-trip', () => {
+    const ctx = new WorkflowContext({
+      analysis: {
+        tasks: [
+          { id: 't1', title: 'Task 1', nested: { deep: true } },
+        ],
+        metadata: { version: 2 },
+      },
+    });
+
+    const restored = WorkflowContext.fromCheckpoint(ctx.toCheckpoint());
+    expect(restored.resolve('analysis.tasks.0.nested.deep')).toBe(true);
+    expect(restored.resolve('analysis.metadata.version')).toBe(2);
+  });
+});
+
+// ================================================================
+// getResult()
+// ================================================================
+
+describe('WorkflowContext - getResult()', () => {
+  it('returns completed status', () => {
+    const ctx = new WorkflowContext();
+    const result = ctx.getResult();
+    expect(result.status).toBe('completed');
+  });
+
+  it('includes all variables as outputs', () => {
+    const ctx = new WorkflowContext({ a: 1, b: 'two' });
+    const result = ctx.getResult();
+    expect(result.outputs).toEqual({ a: 1, b: 'two' });
+  });
+
+  it('includes completed phases', () => {
+    const ctx = new WorkflowContext();
+    ctx.markPhaseCompleted('analyze');
+    ctx.markPhaseCompleted('verify');
+    const result = ctx.getResult();
+    expect(result.completedPhases).toEqual(['analyze', 'verify']);
+  });
+
+  it('returns copies of outputs and phases', () => {
+    const ctx = new WorkflowContext({ x: 1 });
+    ctx.markPhaseCompleted('plan');
+    const result = ctx.getResult();
+    result.outputs.x = 999;
+    result.completedPhases.push('hacked');
+
+    expect(ctx.get('x')).toBe(1);
+    expect(ctx.getCompletedPhases()).toEqual(['plan']);
+  });
+
+  it('does not include error or blockerDetails by default', () => {
+    const ctx = new WorkflowContext();
+    const result = ctx.getResult();
+    expect(result.error).toBeUndefined();
+    expect(result.blockerDetails).toBeUndefined();
+  });
+});
+
+// ================================================================
+// getCurrentTaskId()
+// ================================================================
+
+describe('WorkflowContext - getCurrentTaskId()', () => {
+  it('returns null for a fresh context', () => {
+    const ctx = new WorkflowContext();
+    expect(ctx.getCurrentTaskId()).toBeNull();
+  });
+
+  it('returns the task ID in a child context', () => {
+    const parent = new WorkflowContext();
+    const child = parent.withTask(makeTask({ id: 'task-abc' }));
+    expect(child.getCurrentTaskId()).toBe('task-abc');
+  });
+});
+
+// ================================================================
+// getChangedFiles() returns a copy
+// ================================================================
+
+describe('WorkflowContext - getChangedFiles() immutability', () => {
+  it('returns a copy of the changed files array', () => {
+    const ctx = new WorkflowContext();
+    ctx.addChangedFile('src/a.ts');
+    const files = ctx.getChangedFiles();
+    files.push('hacked.ts');
+    expect(ctx.getChangedFiles()).toEqual(['src/a.ts']);
+  });
+});
