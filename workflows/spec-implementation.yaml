@@ -1,0 +1,60 @@
+name: spec-implementation
+version: 1
+
+defaults:
+  model: opus
+  permissionMode: bypassPermissions
+  settingSources: ["project"]
+
+phases:
+  - name: analyze
+    agent: agents/analyzer.md
+    model: sonnet
+    output: analysis
+
+  - name: plan
+    type: code
+    handler: create-issues
+    input: analysis
+
+  - name: execute
+    type: per-task
+    source: analysis.tasks
+    steps:
+
+      - name: implement
+        agent: agents/implementer.md
+        input: task
+
+      - name: review
+        type: gate-group
+        gates: review-gates/
+        output: review
+
+      - name: fix
+        type: loop
+        condition: review.hasActionableIssues
+        maxRetries: 2
+        onExhausted: escalate
+        steps:
+          - name: fix-issues
+            agent: agents/fixer.md
+            input: review.actionableIssues
+
+          - name: re-review
+            type: gate-group
+            gates: review-gates/
+            output: review
+
+      - name: checkpoint
+        type: code
+        handler: save-checkpoint
+
+  - name: verify
+    agent: agents/verifier.md
+    output: verification
+    failWhen: verification.testSuite.exitCode != 0
+
+  - name: publish
+    agent: agents/publisher.md
+    output: publish
